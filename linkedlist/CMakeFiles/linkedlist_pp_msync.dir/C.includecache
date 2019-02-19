@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/nobackup/pratyush/linkedlist/linkedlist_pp_msync.c
+stdio.h
+-
+stdlib.h
+-
+sys/types.h
+-
+sys/stat.h
+-
+sys/mman.h
+-
+fcntl.h
+-
+unistd.h
+-
+stdint.h
+-
+x86intrin.h
+-
+sys/mman.h
+-
+
