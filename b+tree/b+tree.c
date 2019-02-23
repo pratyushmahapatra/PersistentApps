@@ -121,10 +121,46 @@ void transferLeftNode(void *path, int position) {
     }
     node->key[0] = rightMostKey;
     node->ptr[0] = rightPtr;
-    parent->key[indexKey] = rightMostKey;
+    node->n++;
+    parent->key[indexKey] = leftNode->key[n-1];
 }
+
 void mergeLeftNode(void *path, int position) {
+    struct Node* node = path[position];
+    long lowestKey = node->key[0];
+    struct Node* parent = path[position - 1];
+    //search for position of lowest key
+    int indexKey = 0;
+    int flag = 0;
+    for (int i = 0 ; i < parent->n; i++) {
+        if ( lowestKey <= parent->key[i]) {
+            indexKey = i;
+            flag = 1;
+            break;
+        }
+    }
+    if (flag == 0)
+        indexKey = parent->n;
+
+    struct Node* leftNode = parent->ptr[indexKey - 1];
+    //merge values from right node into left node
+    for (int i = leftNode->n; i < leftNode->n + node->n; i++)
+    {
+        leftNode->key[i] = node->key[i - leftNode->n];
+        leftNode->ptr[i] = node->ptr[i - leftNode->n];
+    }
+    leftNode->n += node->n; 
+    leftNode->ptr[leftNode->n] = node->key[node->n];
+    node->n = 0;
+    //change key in the parent Node
+    for (int i = indexKey; i < parent->n; i++) {
+        parent->key[i] = parent->key[i + 1];
+        parent->ptr[i] = parent->ptr[i + 1];
+    }
+    parent->ptr[parent->n - 1] = parent->ptr[parent->n];
+    parent->n--;
 }
+
 void transferRightNode(void *path, int position) {
     struct Node* node = path[position];
     long lowestKey = node->key[0];
@@ -145,19 +181,55 @@ void transferRightNode(void *path, int position) {
     struct Node* rightNode = parent->ptr[indexKey + 1];
     long leftMostKey = rightNode->key[0];
     void leftPtr = rightNode->ptr[0];
-    //`leftNode->ptr[leftNode->n - 1] = leftNode->ptr[leftNode->n];
-    //`leftNode->n--;
 
-    //`node->ptr[node->n + 1] = node->ptr[node->n];
-    //`for (int i = node->n; i > 0; i--) {
-    //`    node->key[i] = node->key[i - 1];
-    //`    node->ptr[i] = node->ptr[i - 1];
-    //`}
-    //`node->key[0] = leftMostKey;
-    //`node->ptr[0] = leftPtr;
-    //`parent->key[indexKey] = leftMostKey;
+    for (int i = 0; i < rightNode->n - 1; i++) {
+        rightNode->key[i] = rightNode->key[i + 1];
+        rightNode->ptr[i] = rightNode->ptr[i + 1];
+    }
+    rightNode->ptr[rightNode->n - 1] = rightNode->ptr[rightNode->n];
+    rightNode->n--;
+
+    node->key[node->n] = leftMostKey;
+    node->ptr[node->n + 1] = node->ptr[node->n + 1];
+    node->ptr[node->n] = leftPtr;
+    node->n++;
+    parent->key[indexKey] = leftMostKey;
 }
+
 void mergeRightNode(void *path, int position) {
+    struct Node* node = path[position];
+    long lowestKey = node->key[0];
+    struct Node* parent = path[position - 1];
+    //search for position of lowest key
+    int indexKey = 0;
+    int flag = 0;
+    for (int i = 0 ; i < parent->n; i++) {
+        if ( lowestKey <= parent->key[i]) {
+            indexKey = i;
+            flag = 1;
+            break;
+        }
+    }
+    if (flag == 0)
+        indexKey = parent->n;
+
+    struct Node* rightNode = parent->ptr[indexKey + 1];
+    //merge values from right node into left node
+    for (int i = rightNode->n; i < rightNode->n + node->n; i++)
+    {
+        node->key[i] = rightNode->key[i - node->n];
+        node->ptr[i] = rightNode->ptr[i - node->n];
+    }
+    node->n += rightNode->n; 
+    node->ptr[node->n] = rightNode->key[rightNode->n];
+    rightNode->n = 0;
+    //change key in the parent Node
+    for (int i = indexKey + 1; i < parent->n; i++) {
+        parent->key[i] = parent->key[i + 1];
+        parent->ptr[i] = parent->ptr[i + 1];
+    }
+    parent->ptr[parent->n - 1] = parent->ptr[parent->n];
+    parent->n--;
 }
 
 void flush(long addr) {
@@ -217,17 +289,26 @@ void insert(long key, void data){
         treeLen++;
         pathTaken[treeLen] = node;
     }
+    if (node == NULL) {
+    //havent yet been initialized
+        node = (struct Node*)(segmentp) + num_nodes;
+        num_nodes++;
+    }
     
     int pathIndex = treeLen;
     do{
         if (node->n != THRESHOLD) {   /*The way the insertion works, we can never add a key larger than the maximum in the node. Since our itermediate nodes have the max of the node as the key*/
             int index;
-            for (int i = 0; i < n; i++){
+            int flag = 0;
+            for (int i = 0; i < node->n; i++){
                 if (node->key[i] >= key){
                     index = i;
+                    flag = 1;
                     break;
                 }
             }
+            if (flag == 0)
+                index = node->n;
             long tempkey[THRESHOLD];
             void tempptr[THRESHOLD + 1];
             for (int i = index; i < node->n; i++) {
@@ -239,15 +320,15 @@ void insert(long key, void data){
                 node->ptr[i+1] = tempptr[i]; 
             }
             node->n += 1;
-            node->key[i] = key;
+            node->key[index] = key;
             if (node->leaf == true) {
                 struct Data* new_data = (struct Data*)(datap) + data_nodes;
-                node->ptr[i] = new_data;
+                node->ptr[index + 1] = new_data;
                 data_nodes++;
                 new_data->val = (char)data;
             }
             else {
-                node->ptr[i] = data;
+                node->ptr[index] = data;
             }
             break;
         }
@@ -257,13 +338,18 @@ void insert(long key, void data){
             long tempkey[THRESHOLD + 1];
             void tempptr[THRESHOLD + 2];
             int index;
+            int flag;
             for (int i = 0; i < n; i++){
                 if (node->key[i] > key){
                     index = i;
+                    flag = 1;
                     break;
                 }
             }
-            int flag = 0;
+            if (flag == 0)
+                index = node->n;
+
+            flag = 0;
             for (int i = 0; i < node->n; i++) {
                 if ( i == index) {
                     tempkey[i] = key;
@@ -288,6 +374,18 @@ void insert(long key, void data){
                     tempptr[i+1] = node->ptr[i]; 
                 }
             }
+            if (index == node->n) {
+                tempkey[index] = key;
+                if (node->leaf == true) {
+                    struct Data* new_data = (struct Data*)(datap) + data_nodes;
+                    tempptr[index] = new_data;
+                    data_nodes++;
+                    new_data->val = (char)data;
+                }
+                else {
+                    tempptr[index] = data;
+                }
+            }
             tempptr[THRESHOLD + 1] = node->ptr[THRESHOLD];
 
             //first half goes to node
@@ -308,10 +406,25 @@ void insert(long key, void data){
             new_node->n = (THRESHOLD+1)/2;
             new_node->ptr[node->n] = tempptr[THRESHOLD + 1];
             new_node->leaf = node->leaf;
+            //update old parent key
+            struct Node* parentNode = pathTaken[pathIndex - 1];
+            //use the inserted key to figure out index in parent key
+            int index;
+            int flag = 0;
+            for (int i = 0; i < parentNode->n; i++) {
+                if (parentNode->key[i] >= key) {
+                    index = i;
+                    flag = 1;
+                    break;
+                }
+            }
+            if (flag == 0)
+                index = n + 1;
+            parentNode->key[index] = node->key[node->n - 1];
         }    
         pathIndex--;
         node = pathTaken[pathIndex];
-        key = new_node->key[0];
+        key = new_node->key[new_node->n - 1];
         data = new_node;
     } while(node!=ROOT);
 
@@ -408,41 +521,49 @@ void delete(long key){
             break;
         } 
     }
+    int pathIndex = treeLen;
     if (nodeFound == 0) {
         return;
     }
     else {
-        long tempkey[THRESHOLD];
-        void tempptr[THRESHOLD + 1];
-        for (int i = index; i < node->n; i++) {
-            tempkey[i] = node->key[i]; 
-            tempptr[i] = node->ptr[i]; 
-        }
-        for (int i = index + 1; i < node->n; i++) {
-            node->key[i - 1] = tempkey[i]; 
-            node->ptr[i - 1] = tempptr[i]; 
-        }
-        node->ptr[node->n - 1] = tempptr[node->n]; 
-        node->n -= 1;
+        do {
+            node = pathTaken[pathIndex];
+            if (node->leaf == true) {
+                long tempkey[THRESHOLD];
+                void tempptr[THRESHOLD + 1];
+                for (int i = index; i < node->n; i++) {
+                    tempkey[i] = node->key[i]; 
+                    tempptr[i] = node->ptr[i]; 
+                }
+                for (int i = index + 1; i < node->n; i++) {
+                    node->key[i - 1] = tempkey[i]; 
+                    node->ptr[i - 1] = tempptr[i]; 
+                }
+                node->ptr[node->n - 1] = tempptr[node->n]; 
+                node->n -= 1;
+            }
 
-        if ( node->n < (THRESHOLD + 1)/2) {
-            if (leftNodeExists(pathTaken, treeLen) > (THRESHOLD + 1)/2) {
-                //transfer element from left node
-                transferLeftNode(pathTaken,treeLen);
+            if ( node->n < (THRESHOLD + 1)/2) {
+                if (leftNodeExists(pathTaken, treeLen) > (THRESHOLD + 1)/2) {
+                    //transfer element from left node
+                    transferLeftNode(pathTaken,treeLen);
+                }
+                else if (rightNodeExists(pathTaken, treeLen) > (THRESHOLD + 1)/2) {
+                    //transfer element from right node
+                    transferRightNode(pathTaken, treeLen);
+                }
+                else if (leftNodeExists(pathTaken, treeLen) <= (THRESHOLD + 1)/2) {
+                    //merge with left node
+                    mergeLeftNode(pathTaken, treeLen);
+                }
+                else if (rightNodeExists(pathTaken, treeLen) <= (THRESHOLD + 1)/2) {
+                    //merge with right node
+                    mergeRightNode(pathTaken, treeLen);
+                }
             }
-            else if (rightNodeExists(pathTaken, treeLen) > (THRESHOLD + 1)/2) {
-                //transfer element from right node
-                transferRightNode(pathTaken, treeLen);
-            }
-            else if (leftNodeExists(pathTaken, treeLen) <= (THRESHOLD + 1)/2) {
-                //merge with left node
-                mergeLeftNode(pathTaken, treeLen);
-            }
-            else if (rightNodeExists(pathTaken, treeLen) <= (THRESHOLD + 1)/2) {
-                //merge with right node
-                mergeRightNode(pathTaken, treeLen);
-            }
-        }
+            pathIndex--;
+            //need to figure out the key combination - No need to send the key up again
+        } while(node != ROOT)
     }
 
 }
