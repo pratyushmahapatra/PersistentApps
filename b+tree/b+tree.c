@@ -569,40 +569,27 @@ void delete(long key){
 }
 
 
-void print_list(){
-    struct Node* node = HEAD;
-    while(node->next != NULL){
-        printf("%d->", node->data);
-        node = node->next;
+void printLeaf()
+{
+    struct Node* node = ROOT;
+    //The b+tree has the same number of levels in all directions
+    while (node->leaf != true) {
+        node = node->ptr[0];
     }
-    printf("%d", node->data);
-    printf("\n");
+    //node points to the left most node
+    while (node->ptr[node->n] != NULL) {
+        for (int i = 0; i < node->n; i++) {
+            printf("%d-", node->key[i]);
+        }
+        node = node->ptr[node->n];
+        printf("||");
+    }
+    for (int i = 0; i < node->n; i++) {
+        printf("%d-", node->key[i]);
+    }
 }
 
 void reconstruct_list(){
-    struct Node* node = segmentp;
-    if (node->data == 1){
-        printf("Valid linked list\n");
-        INIT = node;
-        INIT->prev = NULL;
-        INIT->data = 1;
-        HEAD = node->next;
-        HEAD->prev = NULL;
-        node = HEAD;
-        while (node->next != NULL) {
-            struct Node* prev_node = node;
-            struct Node* next_node = node->next;
-            next_node->prev = prev_node;
-            node = node->next;
-        }
-        printf("Linked list reconstructed\n");
-        print_list();
-
-    }
-    else {
-        printf("Invalid linked list node->data=%d\n", node->data);
-        create(1);
-    }
 }
 
 int main(){
