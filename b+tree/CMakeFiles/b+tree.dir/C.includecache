@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/nobackup/pratyush/persistent_apps/b+tree/b+tree.c
+stdio.h
+-
+stdlib.h
+-
+sys/types.h
+-
+sys/stat.h
+-
+sys/mman.h
+-
+fcntl.h
+-
+unistd.h
+-
+stdbool.h
+-
+x86intrin.h
+-
+

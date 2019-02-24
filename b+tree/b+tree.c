@@ -9,20 +9,21 @@
 #include <x86intrin.h>
 
 #define THRESHOLD 9
+#define DATASIZE 128
 
 struct Node{
     int n;
     long key[THRESHOLD];
-    void ptr[THRESHOLD + 1];
+    long ptr[THRESHOLD + 1];
     bool leaf;
 };
 
 struct Data{
-    char val[128];
+    char val[DATASIZE];
 };
 
-void create(long key, void data);
-void insert(long key, void data); 
+void create(long key, char* data);
+void insert(long key, char* data); 
 void delete(long key);
 void search(long key);
 
@@ -41,7 +42,7 @@ struct Node* ROOT;
 int flush_count;
 int fence_count;
 
-int leftNodeExists(void *path, int position) {
+int leftNodeExists(long *path, int position) {
     struct Node* node = path[position];
     long lowestKey = node->key[0];
     struct Node* parent = path[position - 1];
@@ -66,7 +67,7 @@ int leftNodeExists(void *path, int position) {
     return leftNode->n;
 } 
 
-int rightNodeExists(void *path, int position) {
+int rightNodeExists(long *path, int position) {
     struct Node* node = path[position];
     long lowestKey = node->key[0];
     struct Node* parent = path[position - 1];
@@ -91,7 +92,7 @@ int rightNodeExists(void *path, int position) {
     return rightNode->n;
 } 
 
-void transferLeftNode(void *path, int position) {
+void transferLeftNode(long *path, int position) {
     struct Node* node = path[position];
     long lowestKey = node->key[0];
     struct Node* parent = path[position - 1];
@@ -110,7 +111,7 @@ void transferLeftNode(void *path, int position) {
 
     struct Node* leftNode = parent->ptr[indexKey - 1];
     long rightMostKey = leftNode->key[leftNode->n - 1];
-    void rightPtr = leftNode->ptr[leftNode->n - 1];
+    long rightPtr = leftNode->ptr[leftNode->n - 1];
     leftNode->ptr[leftNode->n - 1] = leftNode->ptr[leftNode->n];
     leftNode->n--;
 
@@ -122,10 +123,10 @@ void transferLeftNode(void *path, int position) {
     node->key[0] = rightMostKey;
     node->ptr[0] = rightPtr;
     node->n++;
-    parent->key[indexKey] = leftNode->key[n-1];
+    parent->key[indexKey] = leftNode->key[node->n-1];
 }
 
-void mergeLeftNode(void *path, int position) {
+void mergeLeftNode(long *path, int position) {
     struct Node* node = path[position];
     long lowestKey = node->key[0];
     struct Node* parent = path[position - 1];
@@ -161,7 +162,7 @@ void mergeLeftNode(void *path, int position) {
     parent->n--;
 }
 
-void transferRightNode(void *path, int position) {
+void transferRightNode(long *path, int position) {
     struct Node* node = path[position];
     long lowestKey = node->key[0];
     struct Node* parent = path[position - 1];
@@ -180,7 +181,7 @@ void transferRightNode(void *path, int position) {
 
     struct Node* rightNode = parent->ptr[indexKey + 1];
     long leftMostKey = rightNode->key[0];
-    void leftPtr = rightNode->ptr[0];
+    long leftPtr = rightNode->ptr[0];
 
     for (int i = 0; i < rightNode->n - 1; i++) {
         rightNode->key[i] = rightNode->key[i + 1];
@@ -196,7 +197,7 @@ void transferRightNode(void *path, int position) {
     parent->key[indexKey] = leftMostKey;
 }
 
-void mergeRightNode(void *path, int position) {
+void mergeRightNode(long *path, int position) {
     struct Node* node = path[position];
     long lowestKey = node->key[0];
     struct Node* parent = path[position - 1];
@@ -243,13 +244,13 @@ void fence() {
 }
 
 //We need a location for data to be stored
-void create(long key, void data){
-    INIT = (struct Node*)(segmentp);
+void create(long key, char* data){
+    INIT = (struct Node*)(nodep);
     num_nodes = 1;
     INIT->n = 1;
     flush(&INIT->n);
     INIT->leaf = false;
-    struct Node* new_node = (struct Node*)(segmentp) + num_nodes;
+    struct Node* new_node = (struct Node*)(nodep) + num_nodes;
     num_nodes++;
     ROOT = new_node;
     ROOT->n = 1;
@@ -263,15 +264,16 @@ void create(long key, void data){
     struct Data* new_data = (struct Data*)(datap);
     data_nodes = 1; 
     new_node->ptr[0] = new_data;
-    flush(&new_node->ptr); 
-    new_data->val = (char *) data;
+    flush(&new_node->ptr);
+    memcpy(new_data->val, data, DATASIZE); 
+    //new_data->val = (char *) data;
     flush(&new_data->val); 
 }
 
-void insert(long key, void data){
+void insert(long key, char* data){
     struct Node* node = ROOT;
     int treeLen = 0;
-    void pathTaken[1024];
+    long pathTaken[1024];
     pathTaken[0] = ROOT;
     while (node->leaf != true) {
         int index;
@@ -284,15 +286,15 @@ void insert(long key, void data){
             }
         }
         if (flag == 0)
-            index = n + 1;
-        node = ptr[index];
+            index = node->n;
+        node = node->ptr[index];
+        if (node == NULL) {
+        //havent yet been initialized
+            node = (struct Node*)(nodep) + num_nodes;
+            num_nodes++;
+        }
         treeLen++;
         pathTaken[treeLen] = node;
-    }
-    if (node == NULL) {
-    //havent yet been initialized
-        node = (struct Node*)(segmentp) + num_nodes;
-        num_nodes++;
     }
     
     int pathIndex = treeLen;
@@ -310,7 +312,7 @@ void insert(long key, void data){
             if (flag == 0)
                 index = node->n;
             long tempkey[THRESHOLD];
-            void tempptr[THRESHOLD + 1];
+            long tempptr[THRESHOLD + 1];
             for (int i = index; i < node->n; i++) {
                 tempkey[i] = node->key[i]; 
                 tempptr[i] = node->ptr[i]; 
@@ -325,7 +327,8 @@ void insert(long key, void data){
                 struct Data* new_data = (struct Data*)(datap) + data_nodes;
                 node->ptr[index + 1] = new_data;
                 data_nodes++;
-                new_data->val = (char)data;
+                memcpy(new_data->val, data, DATASIZE); 
+                //new_data->val = (char)data;
             }
             else {
                 node->ptr[index] = data;
@@ -333,13 +336,13 @@ void insert(long key, void data){
             break;
         }
         else {
-            struct Node* new_node = (struct Node*)(segmentp) + num_nodes;
+            struct Node* new_node = (struct Node*)(nodep) + num_nodes;
             num_nodes++;
             long tempkey[THRESHOLD + 1];
-            void tempptr[THRESHOLD + 2];
+            long tempptr[THRESHOLD + 2];
             int index;
             int flag;
-            for (int i = 0; i < n; i++){
+            for (int i = 0; i < node->n; i++){
                 if (node->key[i] > key){
                     index = i;
                     flag = 1;
@@ -357,7 +360,8 @@ void insert(long key, void data){
                         struct Data* new_data = (struct Data*)(datap) + data_nodes;
                         tempptr[i] = new_data;
                         data_nodes++;
-                        new_data->val = (char)data;
+                        //new_data->val = (char)data;
+                        memcpy(new_data->val, data, DATASIZE); 
                     }
                     else {
                         tempptr[i] = data;
@@ -380,7 +384,8 @@ void insert(long key, void data){
                     struct Data* new_data = (struct Data*)(datap) + data_nodes;
                     tempptr[index] = new_data;
                     data_nodes++;
-                    new_data->val = (char)data;
+                    memcpy(new_data->val, data, DATASIZE); 
+                    //new_data->val = (char)data;
                 }
                 else {
                     tempptr[index] = data;
@@ -389,7 +394,7 @@ void insert(long key, void data){
             tempptr[THRESHOLD + 1] = node->ptr[THRESHOLD];
 
             //first half goes to node
-            for (int = 0; i < (THRESHOLD + 1)/2; i++)
+            for (int i = 0; i < (THRESHOLD + 1)/2; i++)
             {
                 node->key[i] = tempkey[i];
                 node->ptr[i] = tempptr[i];
@@ -398,7 +403,7 @@ void insert(long key, void data){
             node->ptr[node->n] = new_node;
 
             //second half to new node
-            for (int = (THRESHOLD + 1)/2; i < THRESHOLD + 1; i++)
+            for (int i = (THRESHOLD + 1)/2; i < THRESHOLD + 1; i++)
             {
                 new_node->key[i] = tempkey[i];
                 new_node->ptr[i] = tempptr[i];
@@ -409,8 +414,8 @@ void insert(long key, void data){
             //update old parent key
             struct Node* parentNode = pathTaken[pathIndex - 1];
             //use the inserted key to figure out index in parent key
-            int index;
-            int flag = 0;
+            index = 0;
+            flag = 0;
             for (int i = 0; i < parentNode->n; i++) {
                 if (parentNode->key[i] >= key) {
                     index = i;
@@ -419,23 +424,23 @@ void insert(long key, void data){
                 }
             }
             if (flag == 0)
-                index = n + 1;
+                index = parentNode->n;
             parentNode->key[index] = node->key[node->n - 1];
+            key = new_node->key[new_node->n - 1];
+            data = new_node;
         }    
         pathIndex--;
         node = pathTaken[pathIndex];
-        key = new_node->key[new_node->n - 1];
-        data = new_node;
     } while(node!=ROOT);
 
     //One condition left - What if the ROOT is full?
     if (node == ROOT) {
-        struct Node* new_node = (struct Node*)(segmentp) + num_nodes;
+        struct Node* new_node = (struct Node*)(nodep) + num_nodes;
         num_nodes++;
         long tempkey[THRESHOLD + 1];
-        void tempptr[THRESHOLD + 2];
+        long tempptr[THRESHOLD + 2];
         int index;
-        for (int i = 0; i < n; i++){
+        for (int i = 0; i < node->n; i++){
             if (node->key[i] >= key){
                 index = i;
                 break;
@@ -461,7 +466,7 @@ void insert(long key, void data){
         tempptr[THRESHOLD + 1] = node->ptr[THRESHOLD];
 
         //first half goes to node
-        for (int = 0; i < (THRESHOLD + 1)/2; i++)
+        for (int i = 0; i < (THRESHOLD + 1)/2; i++)
         {
             node->key[i] = tempkey[i];
             node->ptr[i] = tempptr[i];
@@ -470,7 +475,7 @@ void insert(long key, void data){
         node->ptr[node->n] = new_node;
 
         //second half to new node
-        for (int = (THRESHOLD + 1)/2; i < THRESHOLD + 1; i++)
+        for (int i = (THRESHOLD + 1)/2; i < THRESHOLD + 1; i++)
         {
             new_node->key[i] = tempkey[i];
             new_node->ptr[i] = tempptr[i];
@@ -479,7 +484,7 @@ void insert(long key, void data){
         new_node->ptr[node->n] = tempptr[THRESHOLD + 1];
         new_node->leaf = node->leaf;
 
-        struct Node* new_ROOT_node = (struct Node*)(segmentp) + num_nodes;
+        struct Node* new_ROOT_node = (struct Node*)(nodep) + num_nodes;
         num_nodes++;
         new_ROOT_node->n = 1;
         new_ROOT_node->leaf = false;
@@ -493,7 +498,7 @@ void insert(long key, void data){
 void delete(long key){
     struct Node* node = ROOT;
     int treeLen = 0;
-    void pathTaken[1024];
+    long pathTaken[1024];
     pathTaken[0] = ROOT;
     while (node->leaf != true) {
         int index;
@@ -506,8 +511,8 @@ void delete(long key){
             }
         }
         if (flag == 0)
-            index = n + 1;
-        node = ptr[index];
+            index = node->n;
+        node = node->ptr[index];
         treeLen++;
         pathTaken[treeLen] = node;
     }
@@ -530,7 +535,7 @@ void delete(long key){
             node = pathTaken[pathIndex];
             if (node->leaf == true) {
                 long tempkey[THRESHOLD];
-                void tempptr[THRESHOLD + 1];
+                long tempptr[THRESHOLD + 1];
                 for (int i = index; i < node->n; i++) {
                     tempkey[i] = node->key[i]; 
                     tempptr[i] = node->ptr[i]; 
@@ -563,9 +568,8 @@ void delete(long key){
             }
             pathIndex--;
             //need to figure out the key combination - No need to send the key up again
-        } while(node != ROOT)
+        } while(node != ROOT);
     }
-
 }
 
 
@@ -601,8 +605,8 @@ int main(){
     int node_fd, data_fd, file_present;
     if  (access("/nobackup/pratyush/b+tree/b+tree_node.txt", F_OK) != -1) {
         printf("File exists\n");
-        node_fd = open("/nobackup/pratyush/b+tree/b+tree_node.txt", O_CREAT | O_RDWR, S_IRWXU);
-        data_fd = open("/nobackup/pratyush/b+tree/b+tree_data.txt", O_CREAT | O_RDWR, S_IRWXU);
+        node_fd = open("/nobackup/pratyush/persistent_apps/b+tree/b+tree_node.txt", O_CREAT | O_RDWR, S_IRWXU);
+        data_fd = open("/nobackup/pratyush/persistent_apps/b+tree/b+tree_data.txt", O_CREAT | O_RDWR, S_IRWXU);
         if (node_fd == -1) {
             perror("open");
         }
@@ -612,8 +616,8 @@ int main(){
         file_present = 1;
     }
     else {
-        node_fd = open("/nobackup/pratyush/b+tree/b+tree_node.txt", O_CREAT | O_RDWR, S_IRWXU);
-        data_fd = open("/nobackup/pratyush/b+tree/b+tree_data.txt", O_CREAT | O_RDWR, S_IRWXU);
+        node_fd = open("/nobackup/pratyush/persistent_apps/b+tree/b+tree_node.txt", O_CREAT | O_RDWR, S_IRWXU);
+        data_fd = open("/nobackup/pratyush/persistent_apps/b+tree/b+tree_data.txt", O_CREAT | O_RDWR, S_IRWXU);
         ftruncate(node_fd, size);
         ftruncate(data_fd, size);
         if (node_fd == -1) {
@@ -642,17 +646,23 @@ int main(){
     /*Store HEAD in persistent mem*/
     /*Normal testing first to see if the program works*/
 
-    if (file_present) {
-        reconstruct_list();   
-        return 0; 
-    }
-    else {    
-    }
+    //if (file_present) {
+    //    reconstruct_list();   
+    //    return 0; 
+    //}
+    //else {    
+    //}
+    char *data = "pratyush"; 
+    create(10, data);
     for (int i = 0; i < 100000; i++) {
+        insert(rand()%1000, data); 
+        delete(rand()%1000);
     }
-    print_list();
+    printLeaf();
 
-    munmap(segmentp, size);
-    close(segment_fd);
+    munmap(nodep, size);
+    munmap(datap, size);
+    close(node_fd);
+    close(data_fd);
     return 0;
 }
