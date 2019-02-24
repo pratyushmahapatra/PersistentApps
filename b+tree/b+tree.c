@@ -273,7 +273,7 @@ void create(long key, char* data){
 void insert(long key, char* data){
     struct Node* node = ROOT;
     int treeLen = 0;
-    long pathTaken[1024];
+    long pathTaken[1024*1024];
     pathTaken[0] = ROOT;
     while (node->leaf != true) {
         int index;
