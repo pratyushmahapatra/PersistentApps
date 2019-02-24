@@ -658,7 +658,7 @@ int main(){
     //}
     char *data = "pratyush"; 
     create(10, data);
-    for (int i = 0; i < 100000; i++) {
+    for (int i = 0; i < 1000; i++) {
         insert(rand()%1000, data); 
         delete(rand()%1000);
     }
