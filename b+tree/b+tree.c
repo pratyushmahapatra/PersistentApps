@@ -513,6 +513,10 @@ void delete(long key){
         if (flag == 0)
             index = node->n;
         node = node->ptr[index];
+
+        if (node == NULL)   //if key is not present
+            return;
+
         treeLen++;
         pathTaken[treeLen] = node;
     }
