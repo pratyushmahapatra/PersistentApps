@@ -11,6 +11,8 @@
 #define THRESHOLD 9
 #define DATASIZE 128
 
+//TODO : Check how the ROOT chnages
+
 struct Node{
     int n;
     long key[THRESHOLD];
@@ -255,7 +257,8 @@ void create(long key, char* data){
     ROOT = new_node;
     ROOT->n = 1;
     ROOT->key[0] = key;
-    new_node = (struct Node*)(ROOT) + 1;
+    new_node = (struct Node*)(nodep) + num_nodes;
+    num_nodes++;
     ROOT->ptr[0] = new_node;
     ROOT->leaf = false;
     new_node->leaf = true;
