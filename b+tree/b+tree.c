@@ -285,14 +285,22 @@ void insert(long key, char* data){
                 break;
             }
         }
-        if (flag == 0)
+        if (flag == 0) {
             index = node->n;
-        node = node->ptr[index];
-        if (node == NULL) {
-        //havent yet been initialized
-            node = (struct Node*)(nodep) + num_nodes;
-            num_nodes++;
+            if (node->ptr[index] == NULL) {
+                //havent yet been initialized
+                node->ptr[index] = (struct Node*)(nodep) + num_nodes;
+                num_nodes++;
+                struct Node* new_node = node->ptr[index];
+                new_node->leaf = true;
+                new_node->n = 0;
+                if (index != THRESHOLD) {
+                    node->key[index] = key;
+                    node->n++;
+                }
+            }
         }
+        node = node->ptr[index];
         treeLen++;
         pathTaken[treeLen] = node;
     }
