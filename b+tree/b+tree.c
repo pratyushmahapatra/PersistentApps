@@ -328,15 +328,17 @@ void insert(long key, char* data){
                 tempkey[i] = node->key[i]; 
                 tempptr[i] = node->ptr[i]; 
             }
+            tempptr[node->n] = node->ptr[node->n];
             for (int i = index; i < node->n; i++) {
                 node->key[i+1] = tempkey[i]; 
                 node->ptr[i+1] = tempptr[i]; 
             }
+            node->ptr[node->n + 1] = tempptr[node->n];
             node->n += 1;
             node->key[index] = key;
             if (node->leaf == true) {
                 struct Data* new_data = (struct Data*)(datap) + data_nodes;
-                node->ptr[index + 1] = new_data;
+                node->ptr[index] = new_data;
                 data_nodes++;
                 memcpy(new_data->val, data, DATASIZE); 
                 //new_data->val = (char)data;
@@ -344,6 +346,8 @@ void insert(long key, char* data){
             else {
                 node->ptr[index] = data;
             }
+            //might need to balance the tree : check if the right node and left node exist and have enough entries
+            //when new nodes are made, the left nodes have to point to them
             break;
         }
         else {
@@ -371,7 +375,6 @@ void insert(long key, char* data){
                         struct Data* new_data = (struct Data*)(datap) + data_nodes;
                         tempptr[i] = new_data;
                         data_nodes++;
-                        //new_data->val = (char)data;
                         memcpy(new_data->val, data, DATASIZE); 
                     }
                     else {
@@ -416,8 +419,8 @@ void insert(long key, char* data){
             //second half to new node
             for (int i = (THRESHOLD + 1)/2; i < THRESHOLD + 1; i++)
             {
-                new_node->key[i] = tempkey[i];
-                new_node->ptr[i] = tempptr[i];
+                new_node->key[i - (THRESHOLD + 1)/2] = tempkey[i];
+                new_node->ptr[i - (THRESHOLD + 1)/2] = tempptr[i];
             }
             new_node->n = (THRESHOLD+1)/2;
             new_node->ptr[node->n] = tempptr[THRESHOLD + 1];
@@ -445,6 +448,7 @@ void insert(long key, char* data){
     } while(node!=ROOT);
 
     //One condition left - What if the ROOT is full?
+    //Why am I assuming its full by default? What if the need is to add a new ptr and key?
     if (node == ROOT) {
         struct Node* new_node = (struct Node*)(nodep) + num_nodes;
         num_nodes++;
@@ -670,8 +674,8 @@ int main(){
     char *data = "pratyush"; 
     create(10, data);
     for (int i = 0; i < 1000; i++) {
-        insert(rand()%1000, data); 
-        delete(rand()%1000);
+        insert(rand()%10000, data); 
+        delete(rand()%10000);
     }
     printLeaf();
 
