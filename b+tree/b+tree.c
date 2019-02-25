@@ -10,8 +10,7 @@
 
 #define THRESHOLD 9
 #define DATASIZE 128
-
-//TODO : Check how the ROOT chnages
+#define RECONSTRUCT_THRESHOLD 5
 
 struct Node{
     int n;
@@ -66,6 +65,10 @@ int leftNodeExists(long *path, int position) {
         return 0;
 
     struct Node* leftNode = parent->ptr[indexKey - 1];
+    
+    if (leftNode == NULL)
+    	return 0;
+
     return leftNode->n;
 } 
 
@@ -86,13 +89,42 @@ int rightNodeExists(long *path, int position) {
     if (flag == 0)
         indexKey = parent->n;
 
-    //Now look at left child
+    //Now look at right child
     if (indexKey == parent->n)
         return 0;
 
     struct Node* rightNode = parent->ptr[indexKey + 1];
+
+    if (rightNode == NULL)
+    	return 0;
+
     return rightNode->n;
 } 
+
+void adjustLinkedList(long *path, int position) {
+    struct Node* node = path[position];
+    long lowestKey = node->key[0];
+    struct Node* parent = path[position - 1];
+    //search for position of lowest key
+    int indexKey = 0;
+    int flag = 0;
+    for (int i = 0 ; i < parent->n; i++) {
+        if ( lowestKey <= parent->key[i]) {
+            indexKey = i;
+            flag = 1;
+            break;
+        }
+    }
+    if (flag == 0)
+        indexKey = parent->n;
+
+    struct Node* leftNode = parent->ptr[indexKey - 1];
+    long tempptr = leftNode->ptr[leftNode->n];
+    leftNode->ptr[leftNode->n] = node;
+    node->ptr[node->n] = tempptr;
+    return;
+}
+
 
 void transferLeftNode(long *path, int position) {
     struct Node* node = path[position];
@@ -155,7 +187,10 @@ void mergeLeftNode(long *path, int position) {
     leftNode->n += node->n; 
     leftNode->ptr[leftNode->n] = node->key[node->n];
     node->n = 0;
+    node = NULL;
     //change key in the parent Node
+    parent->key[indexKey - 1] = leftNode->key[leftNode->n - 1];
+    parent->ptr[indexKey - 1] = leftNode;
     for (int i = indexKey; i < parent->n; i++) {
         parent->key[i] = parent->key[i + 1];
         parent->ptr[i] = parent->ptr[i + 1];
@@ -226,6 +261,7 @@ void mergeRightNode(long *path, int position) {
     node->n += rightNode->n; 
     node->ptr[node->n] = rightNode->key[rightNode->n];
     rightNode->n = 0;
+    rightNode = NULL;
     //change key in the parent Node
     for (int i = indexKey + 1; i < parent->n; i++) {
         parent->key[i] = parent->key[i + 1];
@@ -271,6 +307,8 @@ void create(long key, char* data){
     memcpy(new_data->val, data, DATASIZE); 
     //new_data->val = (char *) data;
     flush(&new_data->val); 
+    INIT->ptr[0] = new_node; //INIT should always point to the leftmost node
+    flush(&INIT->ptr[0]);
 }
 
 void insert(long key, char* data){
@@ -346,8 +384,30 @@ void insert(long key, char* data){
             else {
                 node->ptr[index] = data;
             }
-            //might need to balance the tree : check if the right node and left node exist and have enough entries
             //when new nodes are made, the left nodes have to point to them
+            if (leftNodeExists(pathTaken, treeLen)) {
+                //transfer element from left node
+                adjustLinkedList(pathTaken,treeLen);
+            }
+            //might need to balance the tree : check if the right node and left node exist and have enough entries
+            if ( node->n < (THRESHOLD + 1)/2) {
+                if (leftNodeExists(pathTaken, treeLen) > (THRESHOLD + 1)/2) {
+                    //transfer element from left node
+                    transferLeftNode(pathTaken,treeLen);
+                }
+                else if (rightNodeExists(pathTaken, treeLen) > (THRESHOLD + 1)/2) {
+                    //transfer element from right node
+                    transferRightNode(pathTaken, treeLen);
+                }
+                else if ((leftNodeExists(pathTaken, treeLen) <= (THRESHOLD + 1)/2) && (leftNodeExists(pathTaken, treeLen) != 0)) {
+                    //merge with left node
+                    mergeLeftNode(pathTaken, treeLen);
+                }
+                else if (rightNodeExists(pathTaken, treeLen) <= (THRESHOLD + 1)/2 && (rightNodeExists(pathTaken, treeLen) != 0)) {
+                    //merge with right node
+                    mergeRightNode(pathTaken, treeLen);
+                }
+            }
             break;
         }
         else {
@@ -448,65 +508,83 @@ void insert(long key, char* data){
     } while(node!=ROOT);
 
     //One condition left - What if the ROOT is full?
-    //Why am I assuming its full by default? What if the need is to add a new ptr and key?
+    //Why am I assuming its full by default? What if the need is to add a new ptr and key? - Else condition
     if (node == ROOT) {
-        struct Node* new_node = (struct Node*)(nodep) + num_nodes;
-        num_nodes++;
-        long tempkey[THRESHOLD + 1];
-        long tempptr[THRESHOLD + 2];
-        int index;
-        for (int i = 0; i < node->n; i++){
-            if (node->key[i] >= key){
-                index = i;
-                break;
-            }
-        }
-        int flag = 0;
-        for (int i = 0; i < node->n; i++) {
-            if ( i == index) {
-                tempkey[i] = key;
-                tempptr[i] = data;
-                flag = 1;
-                continue;
-            }
-            if (flag == 0) {
-                tempkey[i] = node->key[i]; 
-                tempptr[i] = node->ptr[i]; 
-            }
-            else if (flag == 1) {
-                tempkey[i+1] = node->key[i]; 
-                tempptr[i+1] = node->ptr[i]; 
-            }
-        }
-        tempptr[THRESHOLD + 1] = node->ptr[THRESHOLD];
+    	if (node->n == THRESHOLD) {
+	        struct Node* new_node = (struct Node*)(nodep) + num_nodes;
+	        num_nodes++;
+	        long tempkey[THRESHOLD + 1];
+	        long tempptr[THRESHOLD + 2];
+	        int index;
+	        for (int i = 0; i < node->n; i++){
+	            if (node->key[i] >= key){
+	                index = i;
+	                break;
+	            }
+	        }
+	        int flag = 0;
+	        for (int i = 0; i < node->n; i++) {
+	            if ( i == index) {
+	                tempkey[i] = key;
+	                tempptr[i] = data;
+	                flag = 1;
+	                continue;
+	            }
+	            if (flag == 0) {
+	                tempkey[i] = node->key[i]; 
+	                tempptr[i] = node->ptr[i]; 
+	            }
+	            else if (flag == 1) {
+	                tempkey[i+1] = node->key[i]; 
+	                tempptr[i+1] = node->ptr[i]; 
+	            }
+	        }
+	        tempptr[THRESHOLD + 1] = node->ptr[THRESHOLD];
 
-        //first half goes to node
-        for (int i = 0; i < (THRESHOLD + 1)/2; i++)
-        {
-            node->key[i] = tempkey[i];
-            node->ptr[i] = tempptr[i];
-        }
-        node->n = (THRESHOLD+1)/2;
-        node->ptr[node->n] = new_node;
+	        //first half goes to node
+	        for (int i = 0; i < (THRESHOLD + 1)/2; i++)
+	        {
+	            node->key[i] = tempkey[i];
+	            node->ptr[i] = tempptr[i];
+	        }
+	        node->n = (THRESHOLD+1)/2;
+	        node->ptr[node->n] = new_node;
 
-        //second half to new node
-        for (int i = (THRESHOLD + 1)/2; i < THRESHOLD + 1; i++)
-        {
-            new_node->key[i] = tempkey[i];
-            new_node->ptr[i] = tempptr[i];
-        }
-        new_node->n = (THRESHOLD+1)/2;
-        new_node->ptr[node->n] = tempptr[THRESHOLD + 1];
-        new_node->leaf = node->leaf;
+	        //second half to new node
+	        for (int i = (THRESHOLD + 1)/2; i < THRESHOLD + 1; i++)
+	        {
+	            new_node->key[i] = tempkey[i];
+	            new_node->ptr[i] = tempptr[i];
+	        }
+	        new_node->n = (THRESHOLD+1)/2;
+	        new_node->ptr[node->n] = tempptr[THRESHOLD + 1];
+	        new_node->leaf = node->leaf;
 
-        struct Node* new_ROOT_node = (struct Node*)(nodep) + num_nodes;
-        num_nodes++;
-        new_ROOT_node->n = 1;
-        new_ROOT_node->leaf = false;
-        new_ROOT_node->key[0] = new_node->key[0] - 1;
-        new_ROOT_node->ptr[0] = node;
-        new_ROOT_node->ptr[1] = new_node;
-        ROOT = new_ROOT_node;
+	        struct Node* new_ROOT_node = (struct Node*)(nodep) + num_nodes;
+	        num_nodes++;
+	        new_ROOT_node->n = 1;
+	        new_ROOT_node->leaf = false;
+	        new_ROOT_node->key[0] = new_node->key[0] - 1;
+	        new_ROOT_node->ptr[0] = node;
+	        new_ROOT_node->ptr[1] = new_node;
+	        ROOT = new_ROOT_node;
+	    }
+	    else {
+	    	int index = 0;
+            int flag = 0;
+            for (int i = 0; i < node->n; i++) {
+                if (node->key[i] >= key) {
+                    index = i;
+                    flag = 1;
+                    break;
+                }
+            }
+            if (flag == 0)
+                index = node->n;
+
+            node->key[index] = key;
+            node->ptr[index] = data;
+	    }
     }
 }
 
@@ -613,6 +691,7 @@ void printLeaf()
 }
 
 void reconstruct_list(){
+	//INIT
 }
 
 int main(){
@@ -665,15 +744,14 @@ int main(){
     /*Store HEAD in persistent mem*/
     /*Normal testing first to see if the program works*/
 
-    //if (file_present) {
-    //    reconstruct_list();   
-    //    return 0; 
-    //}
-    //else {    
-    //}
+    if (file_present) {
+        reconstruct_list();   
+        return 0; 
+    }
+
     char *data = "pratyush"; 
     create(10, data);
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < 10; i++) {
         insert(rand()%10000, data); 
         delete(rand()%10000);
     }
