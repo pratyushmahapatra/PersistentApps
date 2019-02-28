@@ -8,9 +8,9 @@
 #include <stdbool.h>
 #include <x86intrin.h>
 
-#define THRESHOLD 9
+#define THRESHOLD 3
 #define DATASIZE 128
-#define RECONSTRUCT_THRESHOLD 5
+#define RECONSTRUCT_THRESHOLD (THRESHOLD + 1)/2
 
 struct Node{
     int n;
@@ -44,112 +44,180 @@ int flush_count;
 int fence_count;
 
 int leftNodeExists(long *path, int position) {
+	//what if its a border node
     struct Node* node = path[position];
     long lowestKey = node->key[0];
-    struct Node* parent = path[position - 1];
-    //search for position of lowest key
-    int indexKey = 0;
-    int flag = 0;
-    for (int i = 0 ; i < parent->n; i++) {
-        if ( lowestKey <= parent->key[i]) {
-            indexKey = i;
-            flag = 1;
-            break;
-        }
-    }
-    if (flag == 0)
-        indexKey = parent->n;
+	int indexKey = 0;
+	int flag = 0;
+	struct Node* parent;
+	int i = 0;
+
+    do {
+	    //search for position of lowest key
+	    i++;
+	    parent = path[position - i];
+	    indexKey = 0;
+	    flag = 0;
+	    for (int j = 0 ; j < parent->n; j++) {
+	        if ( lowestKey <= parent->key[j]) {
+	            indexKey = j;
+	            flag = 1;
+	            break;
+	        }
+	    }
+	    if (flag == 0)
+	        indexKey = parent->n;
+
+	    if (parent == ROOT)
+	    	break;
+	} while(indexKey == 0);
 
     //Now look at left child
     if (indexKey == 0)
         return 0;
 
     struct Node* leftNode = parent->ptr[indexKey - 1];
-    
     if (leftNode == NULL)
     	return 0;
+    while ( leftNode->leaf != true) {
+    	leftNode = leftNode->ptr[leftNode->n - 1];
+    }
 
     return leftNode->n;
 } 
 
 int rightNodeExists(long *path, int position) {
+	//what if its a border node
     struct Node* node = path[position];
     long lowestKey = node->key[0];
-    struct Node* parent = path[position - 1];
+    struct Node* parent;
     //search for position of lowest key
     int indexKey = 0;
     int flag = 0;
-    for (int i = 0 ; i < parent->n; i++) {
-        if ( lowestKey <= parent->key[i]) {
-            indexKey = i;
-            flag = 1;
-            break;
-        }
-    }
-    if (flag == 0)
-        indexKey = parent->n;
+    int i = 0;
+
+    do {
+	    i++;
+	    parent = path[position - i];
+		indexKey = 0;
+		flag = 0;
+	    for (int i = 0 ; i < parent->n; i++) {
+	        if ( lowestKey <= parent->key[i]) {
+	            indexKey = i;
+	            flag = 1;
+	            break;
+	        }
+	    }
+	    if (flag == 0)
+	        indexKey = parent->n;
+	    if (parent == ROOT)
+	    	break;
+	} while (indexKey == parent->n);
 
     //Now look at right child
-    if (indexKey == parent->n)
+    if (indexKey == (parent->n - 1))
         return 0;
 
     struct Node* rightNode = parent->ptr[indexKey + 1];
 
     if (rightNode == NULL)
     	return 0;
-
+    while ( rightNode->leaf != true) {
+    	rightNode = rightNode->ptr[0];
+    }
     return rightNode->n;
 } 
 
 void adjustLinkedList(long *path, int position) {
     struct Node* node = path[position];
     long lowestKey = node->key[0];
-    struct Node* parent = path[position - 1];
+    struct Node* parent;
+    int i = 0;
     //search for position of lowest key
     int indexKey = 0;
     int flag = 0;
-    for (int i = 0 ; i < parent->n; i++) {
-        if ( lowestKey <= parent->key[i]) {
-            indexKey = i;
-            flag = 1;
-            break;
-        }
-    }
-    if (flag == 0)
-        indexKey = parent->n;
+	do {
+	    //search for position of lowest key
+	    i++;
+	    parent = path[position - i];
+	    indexKey = 0;
+	    flag = 0;
+	    for (int j = 0 ; j < parent->n; j++) {
+	        if ( lowestKey <= parent->key[j]) {
+	            indexKey = j;
+	            flag = 1;
+	            break;
+	        }
+	    }
+	    if (flag == 0)
+	        indexKey = parent->n;
+
+	    if (parent == ROOT)
+	    	break;
+	} while(indexKey == 0);
 
     struct Node* leftNode = parent->ptr[indexKey - 1];
+    while ( leftNode->leaf != true) {
+    	leftNode = leftNode->ptr[leftNode->n - 1];
+    }
+    
     long tempptr = leftNode->ptr[leftNode->n];
-    leftNode->ptr[leftNode->n] = node;
-    node->ptr[node->n] = tempptr;
-    return;
+    if (tempptr == node) {
+    	return;
+    }
+    else {
+    	leftNode->ptr[leftNode->n] = node;
+    	node->ptr[node->n] = tempptr;
+    	return;
+	}
 }
 
 
 void transferLeftNode(long *path, int position) {
     struct Node* node = path[position];
     long lowestKey = node->key[0];
-    struct Node* parent = path[position - 1];
-    //search for position of lowest key
-    int indexKey = 0;
-    int flag = 0;
-    for (int i = 0 ; i < parent->n; i++) {
-        if ( lowestKey <= parent->key[i]) {
-            indexKey = i;
-            flag = 1;
-            break;
-        }
-    }
-    if (flag == 0)
-        indexKey = parent->n;
+	int indexKey = 0;
+	int flag = 0;
+	struct Node* parent;
+	int i = 0;
 
+    do {
+	    //search for position of lowest key
+	    i++;
+	    parent = path[position - i];
+	    indexKey = 0;
+	    flag = 0;
+	    for (int j = 0 ; j < parent->n; j++) {
+	        if ( lowestKey <= parent->key[j]) {
+	            indexKey = j;
+	            flag = 1;
+	            break;
+	        }
+	    }
+	    if (flag == 0)
+	        indexKey = parent->n;
+
+	    if (parent == ROOT)
+	    	break;
+	} while(indexKey == 0);
+
+    struct Node* leftNodeParent = NULL;
     struct Node* leftNode = parent->ptr[indexKey - 1];
+    
+    while ( leftNode->leaf != true) {
+    	leftNodeParent = leftNode;
+    	leftNode = leftNode->ptr[leftNode->n - 1];
+    }
+    if (leftNodeParent == NULL)
+    	leftNodeParent = parent;
+
     long rightMostKey = leftNode->key[leftNode->n - 1];
     long rightPtr = leftNode->ptr[leftNode->n - 1];
     leftNode->ptr[leftNode->n - 1] = leftNode->ptr[leftNode->n];
     leftNode->n--;
 
     node->ptr[node->n + 1] = node->ptr[node->n];
+
     for (int i = node->n; i > 0; i--) {
         node->key[i] = node->key[i - 1];
         node->ptr[i] = node->ptr[i - 1];
@@ -157,27 +225,62 @@ void transferLeftNode(long *path, int position) {
     node->key[0] = rightMostKey;
     node->ptr[0] = rightPtr;
     node->n++;
-    parent->key[indexKey] = leftNode->key[node->n-1];
+
+    long key = leftNode->key[leftNode->n - 1]; 
+    indexKey = 0;
+	flag = 0;
+	for (int j = 0 ; j < leftNodeParent->n; j++) {
+	    if ( key <= leftNodeParent->key[j]) {
+	        indexKey = j;
+	        flag = 1;
+	        break;
+	    }
+	}
+	if (flag == 0)
+	    indexKey = leftNodeParent->n;
+
+    leftNodeParent->key[indexKey] = leftNode->key[leftNode->n-1];
+    //TODO: doesn't the parent's parent also have to update the key?
 }
 
 void mergeLeftNode(long *path, int position) {
-    struct Node* node = path[position];
+	struct Node* node = path[position];
     long lowestKey = node->key[0];
-    struct Node* parent = path[position - 1];
-    //search for position of lowest key
-    int indexKey = 0;
-    int flag = 0;
-    for (int i = 0 ; i < parent->n; i++) {
-        if ( lowestKey <= parent->key[i]) {
-            indexKey = i;
-            flag = 1;
-            break;
-        }
-    }
-    if (flag == 0)
-        indexKey = parent->n;
+	int indexKey = 0;
+	int flag = 0;
+	struct Node* parent;
+	int i = 0;
 
+    do {
+	    //search for position of lowest key
+	    i++;
+	    parent = path[position - i];
+	    indexKey = 0;
+	    flag = 0;
+	    for (int j = 0 ; j < parent->n; j++) {
+	        if ( lowestKey <= parent->key[j]) {
+	            indexKey = j;
+	            flag = 1;
+	            break;
+	        }
+	    }
+	    if (flag == 0)
+	        indexKey = parent->n;
+
+	    if (parent == ROOT)
+	    	break;
+	} while(indexKey == 0);
+
+    struct Node* leftNodeParent = NULL;
     struct Node* leftNode = parent->ptr[indexKey - 1];
+    
+    while ( leftNode->leaf != true) {
+    	leftNodeParent = leftNode;
+    	leftNode = leftNode->ptr[leftNode->n - 1];
+    }
+    if (leftNodeParent == NULL)
+    	leftNodeParent = parent;
+
     //merge values from right node into left node
     for (int i = leftNode->n; i < leftNode->n + node->n; i++)
     {
@@ -185,18 +288,44 @@ void mergeLeftNode(long *path, int position) {
         leftNode->ptr[i] = node->ptr[i - leftNode->n];
     }
     leftNode->n += node->n; 
-    leftNode->ptr[leftNode->n] = node->key[node->n];
+    leftNode->ptr[leftNode->n] = node->ptr[node->n];
     node->n = 0;
     node = NULL;
+
     //change key in the parent Node
-    parent->key[indexKey - 1] = leftNode->key[leftNode->n - 1];
-    parent->ptr[indexKey - 1] = leftNode;
+    parent = path[position - 1];
+	indexKey = 0;
+	flag = 0;
+	for (int j = 0 ; j < parent->n; j++) {
+	    if ( lowestKey <= parent->key[j]) {
+	        indexKey = j;
+	        flag = 1;
+	        break;
+	    }
+	}
+
     for (int i = indexKey; i < parent->n; i++) {
         parent->key[i] = parent->key[i + 1];
         parent->ptr[i] = parent->ptr[i + 1];
     }
     parent->ptr[parent->n - 1] = parent->ptr[parent->n];
-    parent->n--;
+    parent->n--; //TODO: rebalance the tree?
+
+    long key = leftNode->key[leftNode->n - 1]; 
+    indexKey = 0;
+	flag = 0;
+	for (int j = 0 ; j < leftNodeParent->n; j++) {
+	    if ( key <= leftNodeParent->key[j]) {
+	        indexKey = j;
+	        flag = 1;
+	        break;
+	    }
+	}
+	if (flag == 0)
+	    indexKey = leftNodeParent->n;
+
+    //change key in the parent Node
+    leftNodeParent->key[indexKey] = leftNode->key[leftNode->n - 1];
 }
 
 void transferRightNode(long *path, int position) {
@@ -259,10 +388,11 @@ void mergeRightNode(long *path, int position) {
         node->ptr[i] = rightNode->ptr[i - node->n];
     }
     node->n += rightNode->n; 
-    node->ptr[node->n] = rightNode->key[rightNode->n];
+    node->ptr[node->n] = rightNode->ptr[rightNode->n];
     rightNode->n = 0;
     rightNode = NULL;
     //change key in the parent Node
+    parent->key[indexKey] = node->key[node->n - 1];
     for (int i = indexKey + 1; i < parent->n; i++) {
         parent->key[i] = parent->key[i + 1];
         parent->ptr[i] = parent->ptr[i + 1];
@@ -338,6 +468,10 @@ void insert(long key, char* data){
                 if (index != THRESHOLD) {
                     node->key[index] = key;
                     node->n++;
+                }
+                else {
+                	printf("Not possible\n");
+                	exit(0);
                 }
             }
         }
@@ -483,7 +617,7 @@ void insert(long key, char* data){
                 new_node->ptr[i - (THRESHOLD + 1)/2] = tempptr[i];
             }
             new_node->n = (THRESHOLD+1)/2;
-            new_node->ptr[node->n] = tempptr[THRESHOLD + 1];
+            new_node->ptr[new_node->n] = tempptr[THRESHOLD + 1];
             new_node->leaf = node->leaf;
             //update old parent key
             struct Node* parentNode = pathTaken[pathIndex - 1];
@@ -584,6 +718,7 @@ void insert(long key, char* data){
 
             node->key[index] = key;
             node->ptr[index] = data;
+            node->n++;
 	    }
     }
 }
@@ -629,7 +764,6 @@ void delete(long key){
     }
     else {
         do {
-            node = pathTaken[pathIndex];
             if (node->leaf == true) {
                 long tempkey[THRESHOLD];
                 long tempptr[THRESHOLD + 1];
@@ -654,16 +788,17 @@ void delete(long key){
                     //transfer element from right node
                     transferRightNode(pathTaken, treeLen);
                 }
-                else if (leftNodeExists(pathTaken, treeLen) <= (THRESHOLD + 1)/2) {
+                else if ((leftNodeExists(pathTaken, treeLen) <= (THRESHOLD + 1)/2) && (leftNodeExists(pathTaken, treeLen) != 0)) {
                     //merge with left node
                     mergeLeftNode(pathTaken, treeLen);
                 }
-                else if (rightNodeExists(pathTaken, treeLen) <= (THRESHOLD + 1)/2) {
+                else if (rightNodeExists(pathTaken, treeLen) <= (THRESHOLD + 1)/2 && (rightNodeExists(pathTaken, treeLen) != 0)) {
                     //merge with right node
                     mergeRightNode(pathTaken, treeLen);
                 }
             }
             pathIndex--;
+            node = pathTaken[pathIndex];
             //need to figure out the key combination - No need to send the key up again
         } while(node != ROOT);
     }
@@ -688,10 +823,72 @@ void printLeaf()
     for (int i = 0; i < node->n; i++) {
         printf("%d-", node->key[i]);
     }
+    printf("\n");
+
+    printf("Printing using INIT info\n");
+    node = INIT->ptr[0];
+    while (node->ptr[node->n] != NULL) {
+        for (int i = 0; i < node->n; i++) {
+            printf("%d-", node->key[i]);
+        }
+        node = node->ptr[node->n];
+        printf("||");
+    }
+    for (int i = 0; i < node->n; i++) {
+        printf("%d-", node->key[i]);
+    }
+    printf("\n");
 }
 
 void reconstruct_list(){
-	//INIT
+	INIT = (struct Node*) nodep;
+	long *leafNodes = (long*)malloc(1024*1024*sizeof(long));
+	struct Node* node;
+	if (INIT->n == 1) {
+		node = INIT->ptr[0];	
+	}
+	else {
+		printf("File corrupted\n");
+		exit(1);
+	}
+	int prevLeafCnt = 0;
+	int leafNodeCnt = 0;
+	int imdNodeCnt = 0;
+
+	while(node != NULL) {
+		leafNodes[leafNodeCnt] = node;
+		leafNodeCnt++;
+		if (node->n == 0)
+			break;
+		node = node->ptr[node->n];
+	}
+
+	num_nodes = 1 + leafNodeCnt;
+
+	imdNodeCnt = (leafNodeCnt)/RECONSTRUCT_THRESHOLD + ((leafNodeCnt - 1)%RECONSTRUCT_THRESHOLD)?1:0;
+	printf("Intermediate Nodes : %d\n", imdNodeCnt);
+	prevLeafCnt = leafNodeCnt;
+	do
+	{
+		leafNodeCnt = 0;
+		for (int i = 0; i < imdNodeCnt; i++){
+			struct Node* imdNode = (struct Node*)(nodep) + num_nodes;
+			for (int j = i*RECONSTRUCT_THRESHOLD; j < (i+1)*RECONSTRUCT_THRESHOLD; j++)
+			{
+				if (j == prevLeafCnt) break;
+				struct Node* leafNode = leafNodes[j];
+				imdNode->key[j%RECONSTRUCT_THRESHOLD] = leafNode->key[leafNode->n - 1]; 
+				imdNode->ptr[j%RECONSTRUCT_THRESHOLD] = leafNode;
+				imdNode->n++;
+				imdNode->leaf = false;				
+			}
+			leafNodes[i] = imdNode; 
+			leafNodeCnt++;
+		}
+		imdNodeCnt = (leafNodeCnt)/RECONSTRUCT_THRESHOLD + ((leafNodeCnt - 1)%RECONSTRUCT_THRESHOLD)?1:0;
+		prevLeafCnt = leafNodeCnt;
+	} while (imdNodeCnt > 1);
+	ROOT = leafNodes[0]; //because the root would have overwritten the last value
 }
 
 int main(){
@@ -701,7 +898,7 @@ int main(){
     long addr = 0x0000010000000000;
     long size = 0x0000000001000000;
     int node_fd, data_fd, file_present;
-    if  (access("/nobackup/pratyush/b+tree/b+tree_node.txt", F_OK) != -1) {
+    if  (access("/nobackup/pratyush/persistent_apps/b+tree/b+tree_node.txt", F_OK) != -1) {
         printf("File exists\n");
         node_fd = open("/nobackup/pratyush/persistent_apps/b+tree/b+tree_node.txt", O_CREAT | O_RDWR, S_IRWXU);
         data_fd = open("/nobackup/pratyush/persistent_apps/b+tree/b+tree_data.txt", O_CREAT | O_RDWR, S_IRWXU);
@@ -746,14 +943,15 @@ int main(){
 
     if (file_present) {
         reconstruct_list();   
+        printLeaf();
         return 0; 
     }
 
     char *data = "pratyush"; 
-    create(10, data);
-    for (int i = 0; i < 10; i++) {
-        insert(rand()%10000, data); 
-        delete(rand()%10000);
+    create(0, data);
+    for (int i = 0; i < 5; i++) {
+        insert(rand()%5, data); 
+        delete(rand()%5);
     }
     printLeaf();
 
