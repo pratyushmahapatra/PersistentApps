@@ -111,6 +111,32 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named b+tree_intel
+
+# Build rule for target.
+b+tree_intel: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 b+tree_intel
+.PHONY : b+tree_intel
+
+# fast build rule for target.
+b+tree_intel/fast:
+	$(MAKE) -f CMakeFiles/b+tree_intel.dir/build.make CMakeFiles/b+tree_intel.dir/build
+.PHONY : b+tree_intel/fast
+
+#=============================================================================
+# Target rules for targets named b+tree_intel_p
+
+# Build rule for target.
+b+tree_intel_p: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 b+tree_intel_p
+.PHONY : b+tree_intel_p
+
+# fast build rule for target.
+b+tree_intel_p/fast:
+	$(MAKE) -f CMakeFiles/b+tree_intel_p.dir/build.make CMakeFiles/b+tree_intel_p.dir/build
+.PHONY : b+tree_intel_p/fast
+
+#=============================================================================
 # Target rules for targets named b+tree
 
 # Build rule for target.
@@ -150,6 +176,60 @@ b+tree.c.s:
 	$(MAKE) -f CMakeFiles/b+tree.dir/build.make CMakeFiles/b+tree.dir/b+tree.c.s
 .PHONY : b+tree.c.s
 
+b+tree_intel.o: b+tree_intel.c.o
+
+.PHONY : b+tree_intel.o
+
+# target to build an object file
+b+tree_intel.c.o:
+	$(MAKE) -f CMakeFiles/b+tree_intel.dir/build.make CMakeFiles/b+tree_intel.dir/b+tree_intel.c.o
+.PHONY : b+tree_intel.c.o
+
+b+tree_intel.i: b+tree_intel.c.i
+
+.PHONY : b+tree_intel.i
+
+# target to preprocess a source file
+b+tree_intel.c.i:
+	$(MAKE) -f CMakeFiles/b+tree_intel.dir/build.make CMakeFiles/b+tree_intel.dir/b+tree_intel.c.i
+.PHONY : b+tree_intel.c.i
+
+b+tree_intel.s: b+tree_intel.c.s
+
+.PHONY : b+tree_intel.s
+
+# target to generate assembly for a file
+b+tree_intel.c.s:
+	$(MAKE) -f CMakeFiles/b+tree_intel.dir/build.make CMakeFiles/b+tree_intel.dir/b+tree_intel.c.s
+.PHONY : b+tree_intel.c.s
+
+b+tree_intel_p.o: b+tree_intel_p.c.o
+
+.PHONY : b+tree_intel_p.o
+
+# target to build an object file
+b+tree_intel_p.c.o:
+	$(MAKE) -f CMakeFiles/b+tree_intel_p.dir/build.make CMakeFiles/b+tree_intel_p.dir/b+tree_intel_p.c.o
+.PHONY : b+tree_intel_p.c.o
+
+b+tree_intel_p.i: b+tree_intel_p.c.i
+
+.PHONY : b+tree_intel_p.i
+
+# target to preprocess a source file
+b+tree_intel_p.c.i:
+	$(MAKE) -f CMakeFiles/b+tree_intel_p.dir/build.make CMakeFiles/b+tree_intel_p.dir/b+tree_intel_p.c.i
+.PHONY : b+tree_intel_p.c.i
+
+b+tree_intel_p.s: b+tree_intel_p.c.s
+
+.PHONY : b+tree_intel_p.s
+
+# target to generate assembly for a file
+b+tree_intel_p.c.s:
+	$(MAKE) -f CMakeFiles/b+tree_intel_p.dir/build.make CMakeFiles/b+tree_intel_p.dir/b+tree_intel_p.c.s
+.PHONY : b+tree_intel_p.c.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -157,11 +237,19 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... edit_cache"
-	@echo "... rebuild_cache"
+	@echo "... b+tree_intel"
+	@echo "... b+tree_intel_p"
 	@echo "... b+tree"
+	@echo "... rebuild_cache"
 	@echo "... b+tree.o"
 	@echo "... b+tree.i"
 	@echo "... b+tree.s"
+	@echo "... b+tree_intel.o"
+	@echo "... b+tree_intel.i"
+	@echo "... b+tree_intel.s"
+	@echo "... b+tree_intel_p.o"
+	@echo "... b+tree_intel_p.i"
+	@echo "... b+tree_intel_p.s"
 .PHONY : help
 
 

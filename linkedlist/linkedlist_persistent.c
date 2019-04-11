@@ -5,8 +5,11 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <x86intrin.h>
+
+typedef uint64_t hrtime_t;
 
 struct Node{
     int data;
@@ -14,28 +17,27 @@ struct Node{
     struct Node *prev;
 };
 
-typedef uint64_t hrtime_t;
 
 void create(int data);
-struct Node* add(struct Node *after, int data);
 void append(int data); //append to tail
 void delete(int data); //deletes the first element with matching data
+void deleteNode(); //delete random node
 struct Node* find_first(int data);
 void findfirst_and_update(int old_data, int new_data);
 void findall_and_update(int old_data, int new_data);
 void reconstruct_list();
 void flush(long addr);
 void fence();
-hrtime_t rdtsc();
 
 void *segmentp;
 struct Node* INIT;
 struct Node* HEAD;
+struct Node* TAIL;
 int flush_count;
 int fence_count;
+bool *bitmap;
 hrtime_t flush_time;
 hrtime_t fence_time;
-
 
 hrtime_t rdtsc() {
     unsigned long int lo, hi;
@@ -45,7 +47,8 @@ hrtime_t rdtsc() {
 
 void flush(long addr) {
     hrtime_t flush_begin = rdtsc(); 
-    __asm__ __volatile__ ("clflushopt %0" : : "m"(addr));
+    //__asm__ __volatile__ ("clflushopt %0" : : "m"(addr));
+    _mm_clflushopt(addr);
     flush_count++;
     hrtime_t flush_end = rdtsc(); 
     flush_time += (flush_end - flush_begin);
@@ -65,6 +68,7 @@ void create(int data){
     INIT->data = 1;
     flush(&INIT->data);
     INIT->prev = NULL;
+    bitmap[0] = true;
     flush(&INIT->prev);
     struct Node* new_node = (struct Node*)(segmentp) + 1;
     new_node->data = data;
@@ -72,8 +76,10 @@ void create(int data){
     new_node->prev = NULL;
     flush(&new_node->prev);
     new_node->next = NULL;
+    bitmap[1] = true;
     flush(&new_node->next);
     HEAD = new_node;
+    TAIL = new_node;
     INIT->next = HEAD;
     flush(&INIT->next);
     fence();
@@ -81,29 +87,84 @@ void create(int data){
 
 void append(int data){
     /*Traverse linked list to find TAIL*/
-    struct Node* TAIL = NULL;
-    struct Node* node = HEAD;
-    while (node->next != NULL){
-        node = node->next;
-    }
-    TAIL = node;
     struct Node* new_node = TAIL;
     new_node = new_node + 1;
     new_node->data = data;
     flush(&new_node->data);
     new_node->prev = TAIL;
-    new_node->next = NULL;
+    new_node->next = NULL;    
+    flush(&new_node->prev);
     flush(&new_node->next);
     TAIL->next = new_node;
     flush(&TAIL->next);
+    TAIL = new_node;
+    int offset = (int)((struct Node*)new_node - (struct Node*)segmentp);
+    bitmap[offset] = true;
     fence();
 }
+
+void deleteNode(){
+    int findNode = rand()%((int)((struct Node*)TAIL - (struct Node*)segmentp));
+    if (findNode == 0)
+        findNode = 1;
+    struct Node* node;
+    if (bitmap[findNode] == true) {
+        node = (struct Node*) segmentp + findNode;
+    }
+    else {
+        for (int i = findNode; i < ((int)((struct Node*)TAIL - (struct Node*)segmentp)); i++) {
+            if (bitmap[i] == true) {
+                findNode = i;
+                node = (struct Node*) segmentp + findNode;
+                break;
+            }
+        }
+    }
+    bitmap[findNode] = false; 
+    if (node == HEAD) {
+        struct Node *newHEAD = node->next;
+        if (newHEAD != NULL) {
+            newHEAD->prev = NULL;
+            flush(&newHEAD->prev);
+            HEAD = newHEAD;
+            flush(HEAD);
+            INIT->next = HEAD;
+            flush(&INIT->next);
+            fence();
+        }
+        else {
+            INIT->data = 0; // No data in persistent memory
+            flush(&INIT->data);
+            fence();
+        }
+    }
+    else if (node == TAIL) {
+        struct Node* previous_node = node->prev;
+        struct Node* next_node = node->next;
+        previous_node->next = next_node;
+        flush(&previous_node->next);
+        fence();
+        TAIL = previous_node;
+    }
+    else {
+        struct Node* previous_node = node->prev;
+        struct Node* next_node = node->next;
+        previous_node->next = next_node;
+        flush(&previous_node->next);
+        next_node->prev = previous_node;
+        flush(&next_node->prev);
+        fence();
+    }
+}
+
 
 void delete(int data){
     struct Node *node = HEAD;
     
     while (node->next != NULL){
         if (node->data == data) {
+            int offset = (int)((struct Node*)node - (struct Node*)segmentp);
+            bitmap[offset] = false;
             if (node == HEAD) {
                 struct Node *newHEAD = node->next;
                 if (newHEAD != NULL) {
@@ -225,13 +286,13 @@ int main(){
     long addr = 0x0000010000000000;
     long size = 0x0000000010000000;
     int segment_fd, file_present;
-    if  (access("/nobackup/pratyush/linkedlist/linkedlist.txt", F_OK) != -1) {
+    if  (access("/nobackup/pratyush/persistent_apps/linkedlist_p.txt", F_OK) != -1) {
         printf("File exists\n");
-        segment_fd = open("/nobackup/pratyush/linkedlist/linkedlist.txt", O_CREAT | O_RDWR, S_IRWXU);
+        segment_fd = open("/nobackup/pratyush/persistent_apps/linkedlist_p.txt", O_CREAT | O_RDWR, S_IRWXU);
         file_present = 1;
     }
     else {
-        segment_fd = open("/nobackup/pratyush/linkedlist/linkedlist.txt", O_CREAT | O_RDWR, S_IRWXU);
+        segment_fd = open("/nobackup/pratyush/persistent_apps/linkedlist_p.txt", O_CREAT | O_RDWR, S_IRWXU);
         ftruncate(segment_fd, size);
         if (segment_fd == -1) {
             perror("open");
@@ -245,6 +306,8 @@ int main(){
     if (segmentp == (void *) -1 ) {
         perror("mmap");
     }
+    
+    bitmap = (bool *) calloc(size,sizeof(bool));
 
     /*Store HEAD in persistent mem*/
     /*Normal testing first to see if the program works*/
@@ -257,20 +320,19 @@ int main(){
         create(1);
     }
 
-    for (int i = 0; i < 100000; i++) {
-        append(2);
-        append(20);
-        append(10);
-        delete(20);
-        delete(1);
-        append(1);
+   for (int i = 0; i < 250000; i++) {
+        append(rand());
+        append(rand());
+        append(rand());
+        deleteNode();
+        deleteNode();
     }
-    print_list();
+    //print_list();
 
+    hrtime_t program_end = rdtsc();
+    printf("Program time: %f msec , Fence time: %f msec Flush time: %f msec\n", ((double)(program_end - program_start)/(3.4*1000*1000)), ((double)fence_time)/(3.4*1000*1000), ((double)flush_time)/(3.4*1000*1000));
+    printf("Number of flushes: %ld, Number of fences: %ld\n", flush_count, fence_count);
     munmap(segmentp, size);
     close(segment_fd);
-    hrtime_t program_end = rdtsc();
-    printf("Program time: %f , Fence time: %f Flush time: %f\n", ((double)(program_end - program_start)/(3.4*1000*1000)), ((double)fence_time)/(3.4*1000*1000), ((double)flush_time)/(3.4*1000*1000));
-    printf("Number of flushes: %ld, Number of fences: %ld\n", flush_count, fence_count);
     return 0;
 }

@@ -1,0 +1,42 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/nobackup/pratyush/persistent_apps/hashmap/hashmap.c
+hashmap.h
+/nobackup/pratyush/persistent_apps/hashmap/hashmap.h
+assert.h
+-
+errno.h
+-
+threads.h
+/nobackup/pratyush/persistent_apps/hashmap/threads.h
+stdlib.h
+-
+string.h
+-
+stdbool.h
+-
+sys/types.h
+-
+stdio.h
+-
+
+/nobackup/pratyush/persistent_apps/hashmap/hashmap.h
+stdbool.h
+-
+stdlib.h
+-
+
+/nobackup/pratyush/persistent_apps/hashmap/threads.h
+sys/types.h
+-
+pthread.h
+-
+windows.h
+-
+

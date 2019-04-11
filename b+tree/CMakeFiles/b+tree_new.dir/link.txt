@@ -1,0 +1,1 @@
+/usr/bin/cc  -g3 -march=native   CMakeFiles/b+tree_new.dir/b+tree_new.c.o  -o b+tree_new -rdynamic -lm 

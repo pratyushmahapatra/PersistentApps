@@ -48,24 +48,13 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /nobackup/pratyush/linkedlist
+CMAKE_SOURCE_DIR = /nobackup/pratyush/persistent_apps/linkedlist
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /nobackup/pratyush/linkedlist
+CMAKE_BINARY_DIR = /nobackup/pratyush/persistent_apps/linkedlist
 
 #=============================================================================
 # Targets provided globally by CMake.
-
-# Special rule for the target rebuild_cache
-rebuild_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/usr/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
-.PHONY : rebuild_cache
-
-# Special rule for the target rebuild_cache
-rebuild_cache/fast: rebuild_cache
-
-.PHONY : rebuild_cache/fast
 
 # Special rule for the target edit_cache
 edit_cache:
@@ -78,11 +67,22 @@ edit_cache/fast: edit_cache
 
 .PHONY : edit_cache/fast
 
+# Special rule for the target rebuild_cache
+rebuild_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
+	/usr/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+.PHONY : rebuild_cache
+
+# Special rule for the target rebuild_cache
+rebuild_cache/fast: rebuild_cache
+
+.PHONY : rebuild_cache/fast
+
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /nobackup/pratyush/linkedlist/CMakeFiles /nobackup/pratyush/linkedlist/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /nobackup/pratyush/persistent_apps/linkedlist/CMakeFiles /nobackup/pratyush/persistent_apps/linkedlist/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /nobackup/pratyush/linkedlist/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /nobackup/pratyush/persistent_apps/linkedlist/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -124,19 +124,6 @@ linkedlist_volatile_mallocall/fast:
 .PHONY : linkedlist_volatile_mallocall/fast
 
 #=============================================================================
-# Target rules for targets named linkedlist_volatile_malloc
-
-# Build rule for target.
-linkedlist_volatile_malloc: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 linkedlist_volatile_malloc
-.PHONY : linkedlist_volatile_malloc
-
-# fast build rule for target.
-linkedlist_volatile_malloc/fast:
-	$(MAKE) -f CMakeFiles/linkedlist_volatile_malloc.dir/build.make CMakeFiles/linkedlist_volatile_malloc.dir/build
-.PHONY : linkedlist_volatile_malloc/fast
-
-#=============================================================================
 # Target rules for targets named linkedlist
 
 # Build rule for target.
@@ -163,17 +150,17 @@ linkedlist_persistent/fast:
 .PHONY : linkedlist_persistent/fast
 
 #=============================================================================
-# Target rules for targets named linkedlist_pp_msync
+# Target rules for targets named linkedlist_volatile_malloc
 
 # Build rule for target.
-linkedlist_pp_msync: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 linkedlist_pp_msync
-.PHONY : linkedlist_pp_msync
+linkedlist_volatile_malloc: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 linkedlist_volatile_malloc
+.PHONY : linkedlist_volatile_malloc
 
 # fast build rule for target.
-linkedlist_pp_msync/fast:
-	$(MAKE) -f CMakeFiles/linkedlist_pp_msync.dir/build.make CMakeFiles/linkedlist_pp_msync.dir/build
-.PHONY : linkedlist_pp_msync/fast
+linkedlist_volatile_malloc/fast:
+	$(MAKE) -f CMakeFiles/linkedlist_volatile_malloc.dir/build.make CMakeFiles/linkedlist_volatile_malloc.dir/build
+.PHONY : linkedlist_volatile_malloc/fast
 
 #=============================================================================
 # Target rules for targets named linkedlist_volatile_mmap
@@ -187,32 +174,6 @@ linkedlist_volatile_mmap: cmake_check_build_system
 linkedlist_volatile_mmap/fast:
 	$(MAKE) -f CMakeFiles/linkedlist_volatile_mmap.dir/build.make CMakeFiles/linkedlist_volatile_mmap.dir/build
 .PHONY : linkedlist_volatile_mmap/fast
-
-#=============================================================================
-# Target rules for targets named linkedlist_copyonflush
-
-# Build rule for target.
-linkedlist_copyonflush: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 linkedlist_copyonflush
-.PHONY : linkedlist_copyonflush
-
-# fast build rule for target.
-linkedlist_copyonflush/fast:
-	$(MAKE) -f CMakeFiles/linkedlist_copyonflush.dir/build.make CMakeFiles/linkedlist_copyonflush.dir/build
-.PHONY : linkedlist_copyonflush/fast
-
-#=============================================================================
-# Target rules for targets named linkedlist_persistent_msync
-
-# Build rule for target.
-linkedlist_persistent_msync: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 linkedlist_persistent_msync
-.PHONY : linkedlist_persistent_msync
-
-# fast build rule for target.
-linkedlist_persistent_msync/fast:
-	$(MAKE) -f CMakeFiles/linkedlist_persistent_msync.dir/build.make CMakeFiles/linkedlist_persistent_msync.dir/build
-.PHONY : linkedlist_persistent_msync/fast
 
 linkedlist.o: linkedlist.c.o
 
@@ -241,33 +202,6 @@ linkedlist.c.s:
 	$(MAKE) -f CMakeFiles/linkedlist.dir/build.make CMakeFiles/linkedlist.dir/linkedlist.c.s
 .PHONY : linkedlist.c.s
 
-linkedlist_copyonflush.o: linkedlist_copyonflush.c.o
-
-.PHONY : linkedlist_copyonflush.o
-
-# target to build an object file
-linkedlist_copyonflush.c.o:
-	$(MAKE) -f CMakeFiles/linkedlist_copyonflush.dir/build.make CMakeFiles/linkedlist_copyonflush.dir/linkedlist_copyonflush.c.o
-.PHONY : linkedlist_copyonflush.c.o
-
-linkedlist_copyonflush.i: linkedlist_copyonflush.c.i
-
-.PHONY : linkedlist_copyonflush.i
-
-# target to preprocess a source file
-linkedlist_copyonflush.c.i:
-	$(MAKE) -f CMakeFiles/linkedlist_copyonflush.dir/build.make CMakeFiles/linkedlist_copyonflush.dir/linkedlist_copyonflush.c.i
-.PHONY : linkedlist_copyonflush.c.i
-
-linkedlist_copyonflush.s: linkedlist_copyonflush.c.s
-
-.PHONY : linkedlist_copyonflush.s
-
-# target to generate assembly for a file
-linkedlist_copyonflush.c.s:
-	$(MAKE) -f CMakeFiles/linkedlist_copyonflush.dir/build.make CMakeFiles/linkedlist_copyonflush.dir/linkedlist_copyonflush.c.s
-.PHONY : linkedlist_copyonflush.c.s
-
 linkedlist_persistent.o: linkedlist_persistent.c.o
 
 .PHONY : linkedlist_persistent.o
@@ -294,60 +228,6 @@ linkedlist_persistent.s: linkedlist_persistent.c.s
 linkedlist_persistent.c.s:
 	$(MAKE) -f CMakeFiles/linkedlist_persistent.dir/build.make CMakeFiles/linkedlist_persistent.dir/linkedlist_persistent.c.s
 .PHONY : linkedlist_persistent.c.s
-
-linkedlist_persistent_msync.o: linkedlist_persistent_msync.c.o
-
-.PHONY : linkedlist_persistent_msync.o
-
-# target to build an object file
-linkedlist_persistent_msync.c.o:
-	$(MAKE) -f CMakeFiles/linkedlist_persistent_msync.dir/build.make CMakeFiles/linkedlist_persistent_msync.dir/linkedlist_persistent_msync.c.o
-.PHONY : linkedlist_persistent_msync.c.o
-
-linkedlist_persistent_msync.i: linkedlist_persistent_msync.c.i
-
-.PHONY : linkedlist_persistent_msync.i
-
-# target to preprocess a source file
-linkedlist_persistent_msync.c.i:
-	$(MAKE) -f CMakeFiles/linkedlist_persistent_msync.dir/build.make CMakeFiles/linkedlist_persistent_msync.dir/linkedlist_persistent_msync.c.i
-.PHONY : linkedlist_persistent_msync.c.i
-
-linkedlist_persistent_msync.s: linkedlist_persistent_msync.c.s
-
-.PHONY : linkedlist_persistent_msync.s
-
-# target to generate assembly for a file
-linkedlist_persistent_msync.c.s:
-	$(MAKE) -f CMakeFiles/linkedlist_persistent_msync.dir/build.make CMakeFiles/linkedlist_persistent_msync.dir/linkedlist_persistent_msync.c.s
-.PHONY : linkedlist_persistent_msync.c.s
-
-linkedlist_pp_msync.o: linkedlist_pp_msync.c.o
-
-.PHONY : linkedlist_pp_msync.o
-
-# target to build an object file
-linkedlist_pp_msync.c.o:
-	$(MAKE) -f CMakeFiles/linkedlist_pp_msync.dir/build.make CMakeFiles/linkedlist_pp_msync.dir/linkedlist_pp_msync.c.o
-.PHONY : linkedlist_pp_msync.c.o
-
-linkedlist_pp_msync.i: linkedlist_pp_msync.c.i
-
-.PHONY : linkedlist_pp_msync.i
-
-# target to preprocess a source file
-linkedlist_pp_msync.c.i:
-	$(MAKE) -f CMakeFiles/linkedlist_pp_msync.dir/build.make CMakeFiles/linkedlist_pp_msync.dir/linkedlist_pp_msync.c.i
-.PHONY : linkedlist_pp_msync.c.i
-
-linkedlist_pp_msync.s: linkedlist_pp_msync.c.s
-
-.PHONY : linkedlist_pp_msync.s
-
-# target to generate assembly for a file
-linkedlist_pp_msync.c.s:
-	$(MAKE) -f CMakeFiles/linkedlist_pp_msync.dir/build.make CMakeFiles/linkedlist_pp_msync.dir/linkedlist_pp_msync.c.s
-.PHONY : linkedlist_pp_msync.c.s
 
 linkedlist_volatile_malloc.o: linkedlist_volatile_malloc.c.o
 
@@ -436,31 +316,19 @@ help:
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
+	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... linkedlist_volatile_mallocall"
-	@echo "... linkedlist_volatile_malloc"
 	@echo "... linkedlist"
 	@echo "... linkedlist_persistent"
-	@echo "... edit_cache"
-	@echo "... linkedlist_pp_msync"
+	@echo "... linkedlist_volatile_malloc"
 	@echo "... linkedlist_volatile_mmap"
-	@echo "... linkedlist_copyonflush"
-	@echo "... linkedlist_persistent_msync"
 	@echo "... linkedlist.o"
 	@echo "... linkedlist.i"
 	@echo "... linkedlist.s"
-	@echo "... linkedlist_copyonflush.o"
-	@echo "... linkedlist_copyonflush.i"
-	@echo "... linkedlist_copyonflush.s"
 	@echo "... linkedlist_persistent.o"
 	@echo "... linkedlist_persistent.i"
 	@echo "... linkedlist_persistent.s"
-	@echo "... linkedlist_persistent_msync.o"
-	@echo "... linkedlist_persistent_msync.i"
-	@echo "... linkedlist_persistent_msync.s"
-	@echo "... linkedlist_pp_msync.o"
-	@echo "... linkedlist_pp_msync.i"
-	@echo "... linkedlist_pp_msync.s"
 	@echo "... linkedlist_volatile_malloc.o"
 	@echo "... linkedlist_volatile_malloc.i"
 	@echo "... linkedlist_volatile_malloc.s"

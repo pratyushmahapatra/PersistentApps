@@ -1,0 +1,1 @@
+/usr/bin/cc  -g3 -march=native   CMakeFiles/b+tree_intel.dir/b+tree_intel.c.o  -o b+tree_intel -rdynamic -lm 

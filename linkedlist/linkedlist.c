@@ -6,6 +6,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <x86intrin.h>
+
+typedef uint64_t hrtime_t;
 
 struct Node{
     int data;
@@ -32,15 +36,30 @@ struct Node* TAIL;
 int flush_count;
 int fence_count;
 bool *bitmap;
+hrtime_t flush_time;
+hrtime_t fence_time;
+
+hrtime_t rdtsc() {
+    unsigned long int lo, hi;
+    __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
+    return (hrtime_t)hi << 32 | lo; 
+} 
 
 void flush(long addr) {
-    __asm__ __volatile__ ("clflushopt %0" : : "m"(addr));
+    hrtime_t flush_begin = rdtsc(); 
+    //__asm__ __volatile__ ("clflushopt %0" : : "m"(addr));
+    _mm_clflushopt(addr);
     flush_count++;
+    hrtime_t flush_end = rdtsc(); 
+    flush_time += (flush_end - flush_begin);
 }
 
 void fence() {
+    hrtime_t fence_begin = rdtsc(); 
     __asm__ __volatile__ ("mfence");
     fence_count++;
+    hrtime_t fence_end = rdtsc(); 
+    fence_time += (fence_end - fence_begin);
 }
 
 
@@ -267,15 +286,15 @@ int main(){
     flush_count = 0;
     fence_count = 0;
     long addr = 0x0000010000000000;
-    long size = 0x0000000001000000;
+    long size = 0x0000000010000000;
     int segment_fd, file_present;
-    if  (access("/nobackup/pratyush/linkedlist/linkedlist.txt", F_OK) != -1) {
+    if  (access("/nobackup/pratyush/persistent_apps/linkedlist.txt", F_OK) != -1) {
         printf("File exists\n");
-        segment_fd = open("/nobackup/pratyush/linkedlist/linkedlist.txt", O_CREAT | O_RDWR, S_IRWXU);
+        segment_fd = open("/nobackup/pratyush/persistent_apps/linkedlist.txt", O_CREAT | O_RDWR, S_IRWXU);
         file_present = 1;
     }
     else {
-        segment_fd = open("/nobackup/pratyush/linkedlist/linkedlist.txt", O_CREAT | O_RDWR, S_IRWXU);
+        segment_fd = open("/nobackup/pratyush/persistent_apps/linkedlist.txt", O_CREAT | O_RDWR, S_IRWXU);
         ftruncate(segment_fd, size);
         if (segment_fd == -1) {
             perror("open");
@@ -291,6 +310,7 @@ int main(){
     }
 
     bitmap = (bool *) calloc(size,sizeof(bool));
+    hrtime_t program_start = rdtsc();
 
     /*Store HEAD in persistent mem*/
     /*Normal testing first to see if the program works*/
@@ -302,16 +322,18 @@ int main(){
     else {    
         create(1);
     }
-    for (int i = 0; i < 100000; i++) {
-        append(2);
-        append(20);
-        append(10);
+   for (int i = 0; i < 250000; i++) {
+        append(rand());
+        append(rand());
+        append(rand());
         deleteNode();
         deleteNode();
-        append(1);
     }
-    print_list();
+    //print_list();
 
+    hrtime_t program_end = rdtsc();
+    printf("Program time: %f msec , Fence time: %f msec Flush time: %f msec\n", ((double)(program_end - program_start)/(3.4*1000*1000)), ((double)fence_time)/(3.4*1000*1000), ((double)flush_time)/(3.4*1000*1000));
+    printf("Number of flushes: %ld, Number of fences: %ld\n", flush_count, fence_count);
     munmap(segmentp, size);
     close(segment_fd);
     return 0;

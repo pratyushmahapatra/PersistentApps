@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_C
-  "/nobackup/pratyush/linkedlist/linkedlist_volatile_mallocall.c" "/nobackup/pratyush/linkedlist/CMakeFiles/linkedlist_volatile_mallocall.dir/linkedlist_volatile_mallocall.c.o"
+  "/nobackup/pratyush/persistent_apps/linkedlist/linkedlist_volatile_mallocall.c" "/nobackup/pratyush/persistent_apps/linkedlist/CMakeFiles/linkedlist_volatile_mallocall.dir/linkedlist_volatile_mallocall.c.o"
   )
 set(CMAKE_C_COMPILER_ID "GNU")
 

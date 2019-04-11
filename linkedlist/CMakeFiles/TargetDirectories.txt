@@ -1,10 +1,7 @@
-/nobackup/pratyush/linkedlist/CMakeFiles/rebuild_cache.dir
-/nobackup/pratyush/linkedlist/CMakeFiles/linkedlist_volatile_mallocall.dir
-/nobackup/pratyush/linkedlist/CMakeFiles/linkedlist_volatile_malloc.dir
-/nobackup/pratyush/linkedlist/CMakeFiles/linkedlist.dir
-/nobackup/pratyush/linkedlist/CMakeFiles/linkedlist_persistent.dir
-/nobackup/pratyush/linkedlist/CMakeFiles/edit_cache.dir
-/nobackup/pratyush/linkedlist/CMakeFiles/linkedlist_pp_msync.dir
-/nobackup/pratyush/linkedlist/CMakeFiles/linkedlist_volatile_mmap.dir
-/nobackup/pratyush/linkedlist/CMakeFiles/linkedlist_copyonflush.dir
-/nobackup/pratyush/linkedlist/CMakeFiles/linkedlist_persistent_msync.dir
+/nobackup/pratyush/persistent_apps/linkedlist/CMakeFiles/edit_cache.dir
+/nobackup/pratyush/persistent_apps/linkedlist/CMakeFiles/rebuild_cache.dir
+/nobackup/pratyush/persistent_apps/linkedlist/CMakeFiles/linkedlist_volatile_mallocall.dir
+/nobackup/pratyush/persistent_apps/linkedlist/CMakeFiles/linkedlist.dir
+/nobackup/pratyush/persistent_apps/linkedlist/CMakeFiles/linkedlist_persistent.dir
+/nobackup/pratyush/persistent_apps/linkedlist/CMakeFiles/linkedlist_volatile_malloc.dir
+/nobackup/pratyush/persistent_apps/linkedlist/CMakeFiles/linkedlist_volatile_mmap.dir

@@ -1,1 +1,0 @@
-/usr/bin/cc  -g -march=native   CMakeFiles/linkedlist_pp.dir/linkedlist_copyonflush.c.o  -o linkedlist_pp -rdynamic 
