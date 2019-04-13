@@ -428,7 +428,7 @@ void recover_hashmap(struct Hashmap_p* map_p, Hashmap* map){
     Entry_p *entry_p = entryp;
     int i = 0;
     int offset = 0;
-    while (i < size) {
+    while (i < map->size) {
     	if (entry_p->key != NULL) {
     		i++;
     		Entry* entry = malloc(sizeof(Entry));
@@ -438,13 +438,13 @@ void recover_hashmap(struct Hashmap_p* map_p, Hashmap* map){
     		entry->offset = offset;
     		entry->key = entry_p->key;
     		entry->value = entry_p->value;
-    		entry->next = entry_p->next;
     		int hash = hashKey(map, entry->key);
     		entry->hash = hash;
     		size_t index = calculateIndex(map->bucketCount, entry->hash);
     		Entry* current = map->buckets[index];
     		if (current == NULL) {
     			map->buckets[index] = entry;
+    			entry->next = NULL;
     		} else {
     			Entry *previous;
     		    while (current != NULL) {
@@ -452,6 +452,7 @@ void recover_hashmap(struct Hashmap_p* map_p, Hashmap* map){
     				current = current->next;
     			}
     			previous->next = entry;
+    			entry->next = NULL;
     		}
     	}
     	offset++;
