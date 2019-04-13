@@ -56,10 +56,17 @@ int append_count;
 hrtime_t flush_begin;
 hrtime_t flush_time;
 hrtime_t flush_time_s;
+hrtime_t rdtsc();
 
 void *hashmapp;
 void* entryp;
 int offset;
+
+hrtime_t rdtsc() {
+    unsigned long int lo, hi;
+    __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
+    return (hrtime_t)hi << 32 | lo; 
+}
 
 typedef struct Entry_p Entry_p;
 struct Entry_p {
