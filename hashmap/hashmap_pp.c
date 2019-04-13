@@ -21,8 +21,13 @@
 #include <string.h>
 #include <stdbool.h>
 #include <sys/types.h>
+#include <sys/mman.h>
 #include <stdio.h>
 #include <x86intrin.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 
 #ifndef MAP_SYNC
 #define MAP_SYNC 0x80000
@@ -38,6 +43,11 @@
 #define BUCKETS 3
 #define BUCKET_COUNT 4
 #define DEL 5
+
+int flush_count;
+int fence_count;
+int del_count;
+int append_count;
 
 void *hashmapp;
 void* entryp;
@@ -406,7 +416,7 @@ bool hashmapIntEquals(int keyA, int keyB) {
     return keyA == keyB;
 }
 
-void recover_hashmap(Hashmap_p* map_p, Hashmap* map){
+void recover_hashmap(struct Hashmap_p* map_p, Hashmap* map){
 	int size = 0;
 	for (int i = 0; i < map_p->bucketCount; i++) {
         Entry_p *entry = map_p->buckets[i];
