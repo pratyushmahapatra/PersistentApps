@@ -489,7 +489,7 @@ void print_hashmap(Hashmap *map){
 	for (int i = 0; i < map->bucketCount; i++) {
 		entry = map->buckets[i];
 		while (entry != NULL) {
-			printf("Bucket : %d Key : %d Hash: %d Value: %lld", i, entry->key, entry->hash, entry->value);
+			printf("Bucket : %d Key : %d Hash: %d Value: %lld\n", i, entry->key, entry->hash, entry->value);
     		entry= entry->next;
 		}
 	}
