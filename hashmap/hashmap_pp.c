@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <time.h>
 
 
 #ifndef MAP_SYNC
@@ -48,6 +49,9 @@ int flush_count;
 int fence_count;
 int del_count;
 int append_count;
+hrtime_t flush_begin;
+hrtime_t flush_time;
+hrtime_t flush_time_s;
 
 void *hashmapp;
 void* entryp;
@@ -57,10 +61,10 @@ typedef struct Entry_p Entry_p;
 struct Entry_p {
     int key;
     long long value;
-    Entry* next;
+    struct Entry_p* next;
 };
 struct Hashmap_p {
-    Entry** buckets;
+    struct Entry_p** buckets;
     size_t bucketCount;
 };
 
@@ -93,7 +97,7 @@ void flush(int op, int offset, long long value) {
     		map->buckets = NULL;
     		addr = &map->buckets;
     	} else {
-	    	map->buckets[offset] = (struct Entry_p) entryp + value;
+	    	map->buckets[offset] = (struct Entry_p*) entryp + value;
 	    	addr = &map->buckets[offset];
     	}
     } else if(op == NEXT) {
@@ -421,22 +425,17 @@ void recover_hashmap(struct Hashmap_p* map_p, Hashmap* map){
 	for (int i = 0; i < map_p->bucketCount; i++) {
         Entry_p *entry = map_p->buckets[i];
         while (entry != NULL) {
-            key = entry->key;
-            value = entry->value;
             entry = entry->next; 
             size++;
         }
     }
     map->size = size;
-    if (map->size > (map->bucketCount * 3 / 4)) {
-        // Start off with a 0.33 load factor.
-        size_t newBucketCount = map->bucketCount << 1;
-        Entry** newBuckets = calloc(newBucketCount, sizeof(Entry*));
-        if (newBuckets == NULL) {
-            // Abort expansion.
-            return;
-        }
-    }
+	size_t newBucketCount = map->bucketCount << 1;
+	Entry** newBuckets = calloc(newBucketCount, sizeof(Entry*));
+	if (newBuckets == NULL) {
+	    // Abort expansion.
+	    return;
+	}
     map->buckets = newBuckets;
     map->bucketCount = newBucketCount;
 
@@ -484,7 +483,7 @@ int main(int argc, char * argv[]) {
     append_count = 0;
     long addr = 0x0000010000000000;
     long sizeentry = 100000000*sizeof(Entry_p);
-    int sizehashmap = sizeof(Hashmap_p) + 100000000*sizeof(Entry_p*);
+    int sizehashmap = sizeof(struct Hashmap_p) + 100000000*sizeof(Entry_p*);
     int ratio = atoi(argv[1]);
 
     int hashmap_fd, entry_fd, file_present;
@@ -511,14 +510,14 @@ int main(int argc, char * argv[]) {
         }
         file_present = 0;
     }
-    hashmapp = mmap( (void *) addr, size, PROT_READ| PROT_WRITE, 
+    hashmapp = mmap( (void *) addr, sizehashmap, PROT_READ| PROT_WRITE, 
                     MAP_SYNC|MAP_SHARED_VALIDATE, 
                     hashmap_fd,
                     0);
     if (hashmapp == (void *) -1 ) {
         perror("mmap");
     }
-    entryp = mmap( (void *) addr, size, PROT_READ| PROT_WRITE, 
+    entryp = mmap( (void *) addr, sizeentry, PROT_READ| PROT_WRITE, 
                     MAP_SYNC|MAP_SHARED_VALIDATE, 
                     entry_fd,
                     0);
@@ -529,7 +528,7 @@ int main(int argc, char * argv[]) {
     if (file_present == 1) {
     	struct Hashmap *map = hashmapCreate(100, hashmapIntHash, hashmapIntEquals);
     	struct Hashmap_p *mapp = (struct Hashmap_p*) hashmapp;
-    	recover_hashmap(map_p, map);
+    	recover_hashmap(mapp, map);
 
     } else {
     	struct Hashmap *map = hashmapCreate(100, hashmapIntHash, hashmapIntEquals);
