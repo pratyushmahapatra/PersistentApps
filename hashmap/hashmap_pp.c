@@ -47,6 +47,8 @@
 #define BUCKET_COUNT 4
 #define DEL 5
 
+typedef uint64_t hrtime_t;
+
 int flush_count;
 int fence_count;
 int del_count;
