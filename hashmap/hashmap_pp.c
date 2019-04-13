@@ -511,17 +511,17 @@ int main(int argc, char * argv[]) {
     int hashmap_fd, entry_fd, file_present;
     if  (access("/mnt/ext4-pmem22/persistent_apps/hashmap.txt", F_OK) != -1) {
         printf("File exists\n");
-        //hashmap_fd = open("/mnt/ext4-pmem22/persistent_apps/hashmap.txt", O_CREAT | O_RDWR, S_IRWXU);
-        //entry_fd = open("/mnt/ext4-pmem22/persistent_apps/mapentry.txt", O_CREAT | O_RDWR, S_IRWXU);
-        hashmap_fd = open("/nobackup/pratyush/persistent_apps/hashmap/hashmap.txt", O_CREAT | O_RDWR, S_IRWXU);
-        entry_fd = open("/nobackup/pratyush/persistent_apps/hashmap/mapentry.txt", O_CREAT | O_RDWR, S_IRWXU);
+        hashmap_fd = open("/mnt/ext4-pmem22/persistent_apps/hashmap.txt", O_CREAT | O_RDWR, S_IRWXU);
+        entry_fd = open("/mnt/ext4-pmem22/persistent_apps/mapentry.txt", O_CREAT | O_RDWR, S_IRWXU);
+        //hashmap_fd = open("/nobackup/pratyush/persistent_apps/hashmap/hashmap.txt", O_CREAT | O_RDWR, S_IRWXU);
+        //entry_fd = open("/nobackup/pratyush/persistent_apps/hashmap/mapentry.txt", O_CREAT | O_RDWR, S_IRWXU);
         file_present = 1;
     }
     else {
-        //hashmap_fd = open("/mnt/ext4-pmem22/persistent_apps/hashmap.txt", O_CREAT | O_RDWR, S_IRWXU);
-        //entry_fd = open("/mnt/ext4-pmem22/persistent_apps/mapentry.txt", O_CREAT | O_RDWR, S_IRWXU);
-        hashmap_fd = open("/nobackup/pratyush/persistent_apps/hashmap/hashmap.txt", O_CREAT | O_RDWR, S_IRWXU);
-        entry_fd = open("/nobackup/pratyush/persistent_apps/hashmap/mapentry.txt", O_CREAT | O_RDWR, S_IRWXU);
+        hashmap_fd = open("/mnt/ext4-pmem22/persistent_apps/hashmap.txt", O_CREAT | O_RDWR, S_IRWXU);
+        entry_fd = open("/mnt/ext4-pmem22/persistent_apps/mapentry.txt", O_CREAT | O_RDWR, S_IRWXU);
+        //hashmap_fd = open("/nobackup/pratyush/persistent_apps/hashmap/hashmap.txt", O_CREAT | O_RDWR, S_IRWXU);
+        //entry_fd = open("/nobackup/pratyush/persistent_apps/hashmap/mapentry.txt", O_CREAT | O_RDWR, S_IRWXU);
         ftruncate(hashmap_fd, sizehashmap);
         ftruncate(entry_fd, sizeentry);
         if (hashmap_fd == -1) {
