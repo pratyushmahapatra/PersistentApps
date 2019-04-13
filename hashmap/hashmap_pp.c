@@ -28,7 +28,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <time.h>
-
+#include <sys/stat.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #ifndef MAP_SYNC
 #define MAP_SYNC 0x80000
