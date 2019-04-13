@@ -432,14 +432,18 @@ void recover_hashmap(struct Hashmap_p* map_p, Hashmap* map){
         }
     }*/
     map->size = map_p->size;
-	size_t newBucketCount = map->bucketCount << 1;
-	Entry** newBuckets = calloc(newBucketCount, sizeof(Entry*));
-	if (newBuckets == NULL) {
+    // 0.75 load factor.
+    size_t minimumBucketCount = map->size * 4 / 3;
+    map->bucketCount = 1;
+    while (map->bucketCount <= minimumBucketCount) {
+        // Bucket count must be power of 2.
+        map->bucketCount <<= 1; 
+    }
+    map->buckets = calloc(map->bucketCount, sizeof(Entry*));
+	if (map->buckets == NULL) {
 	    // Abort expansion.
 	    return;
 	}
-    map->buckets = newBuckets;
-    map->bucketCount = newBucketCount;
 
     Entry_p *entry_p = entryp;
     int i = 0;
@@ -540,7 +544,14 @@ int main(int argc, char * argv[]) {
     }
 
     if (file_present == 1) {
-    	struct Hashmap *map = hashmapCreate(100, hashmapIntHash, hashmapIntEquals);
+    	Hashmap* map = malloc(sizeof(Hashmap));
+	    if (map == NULL) {
+	        return NULL;
+	    }
+	    map->hash = hashmapIntHash;
+    	map->equals = hashmapIntEquals;
+    	mutex_init(&map->lock);
+
     	struct Hashmap_p *mapp = (struct Hashmap_p*) hashmapp;
     	recover_hashmap(mapp, map);
     	print_hashmap(map);
