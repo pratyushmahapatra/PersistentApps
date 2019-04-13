@@ -120,6 +120,16 @@ void flush(int op, int offset, long long value) {
     flush_time_s += (flush_end - flush_begin_s);
 }
 
+void fence() {
+    hrtime_t fence_begin = rdtsc(); 
+    __asm__ __volatile__ ("mfence");
+    //fence_count++;
+    hrtime_t fence_end = rdtsc(); 
+    flush_time += (fence_end - flush_begin);
+    flush_time_s += (fence_end - fence_begin);
+    flush_begin = 0;
+}
+
 Hashmap* hashmapCreate(size_t initialCapacity, int (*hash)(int key), bool (*equals)(int keyA, int keyB)) {
     assert(hash != NULL);
     assert(equals != NULL);
@@ -144,6 +154,7 @@ Hashmap* hashmapCreate(size_t initialCapacity, int (*hash)(int key), bool (*equa
     
     map->size = 0;
     flush(SIZE, NULL, (long long)map->size);
+    fence();
     map->hash = hash;
     map->equals = equals;
     
@@ -250,6 +261,7 @@ static Entry* createEntry(int key, int hash, long long value) {
     entry->value = (long long)value;
 	flush(VALUE, entry->offset, entry->value);
     entry->next = NULL;
+    fence();
 	return entry;
 }
 static inline bool equalKeys(int keyA, int hashA, int keyB, int hashB,
@@ -277,6 +289,7 @@ void* hashmapPut(Hashmap* map, int key, long long value) {
             }
             map->size++;
             flush(SIZE, NULL, map->size);
+            fence();
             expandIfNecessary(map);
             return NULL;
         }
@@ -285,6 +298,7 @@ void* hashmapPut(Hashmap* map, int key, long long value) {
             long long oldValue = current->value;
             current->value = value;
             flush(VALUE, current->offset, current->value);
+            fence();
             return oldValue;
         }
         // Move to next entry.
@@ -335,6 +349,7 @@ void* hashmapMemoize(Hashmap* map, int key,
             flush(VALUE, (*p)->offset, (*p)->value);
             map->size++;
             flush(SIZE, NULL, map->size);
+            fence();
             expandIfNecessary(map);
             return value;
         }
@@ -360,6 +375,7 @@ void* hashmapRemove(Hashmap* map, int key) {
             free(current);
             map->size--;
             flush(SIZE, NULL, map->size);
+            fence();
             return value;
         }
         p = &current->next;
@@ -481,7 +497,7 @@ int main(int argc, char * argv[]) {
     append_count = 0;
     long addr = 0x0000010000000000;
     long sizeentry = 100000000*sizeof(Entry_p);
-    int sizehashmap = sizeof(struct Hashmap_p) + 100000000*sizeof(Entry_p*);
+    int sizehashmap = sizeof(struct Hashmap_p);
     int ratio = atoi(argv[1]);
 
     int hashmap_fd, entry_fd, file_present;
