@@ -556,16 +556,16 @@ int main(int argc, char * argv[]) {
     	recover_hashmap(mapp, map);
     	print_hashmap(map);
     } else {
-    	struct Hashmap *map = hashmapCreate(100, hashmapIntHash, hashmapIntEquals);
+    	struct Hashmap *map = hashmapCreate(4, hashmapIntHash, hashmapIntEquals);
         long long value;
         int key;
-        for (int i = 0; i < 10; i++) {
-            key = rand()%10;
+        for (int i = 0; i < 32; i++) {
+            key = rand()%100;
             value = rand()%100;
-            printf("Put : key: %d, value: %d\n", key, value);
+            //printf("Put : key: %d, value: %d\n", key, value);
             hashmapPut(map, key, value);
-            key = rand()%10;
-            printf("Remove : key: %d\n", key);
+            key = rand()%100;
+            //printf("Remove : key: %d\n", key);
             hashmapRemove(map, key);
         }
         print_hashmap(map);
