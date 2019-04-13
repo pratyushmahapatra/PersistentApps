@@ -484,6 +484,17 @@ void recover_hashmap(struct Hashmap_p* map_p, Hashmap* map){
     }
 }
 
+void print_hashmap(Hashmap *map){
+	Entry* entry;
+	for (int i = 0; i < map->bucketCount; i++) {
+		entry = map->buckets[i];
+		while (entry != NULL) {
+			printf("Bucket : %d Key : %d Hash: %d Value: %lld", i, key, hash, value);
+    		entry= entry->next;
+		}
+	}
+}
+
 int main(int argc, char * argv[]) {
 
     offset = 0;
@@ -540,7 +551,7 @@ int main(int argc, char * argv[]) {
     	struct Hashmap *map = hashmapCreate(100, hashmapIntHash, hashmapIntEquals);
     	struct Hashmap_p *mapp = (struct Hashmap_p*) hashmapp;
     	recover_hashmap(mapp, map);
-
+    	print_hashmap(map);
     } else {
     	struct Hashmap *map = hashmapCreate(100, hashmapIntHash, hashmapIntEquals);
         long long value;
@@ -554,16 +565,6 @@ int main(int argc, char * argv[]) {
             printf("Remove : key: %d\n", key);
             hashmapRemove(map, key);
         }
-        printf("Size: %d\n", map->size);
-    
-        for (int i = 0; i < map->bucketCount; i++) {
-            Entry *entry = map->buckets[i];
-            while (entry != NULL) {
-                key = entry->key;
-                value = entry->value;
-                printf("Key: %d , Value: %d\n", key, value);
-                entry = entry->next; 
-            }
-        }
+        print_hashmap(map);
     }
 }
