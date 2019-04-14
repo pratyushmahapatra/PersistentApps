@@ -476,7 +476,7 @@ void recover_hashmap(struct Hashmap_p* map_p, Hashmap* map){
     		}
     	}
     	offset++;
-    	entry_p = entryp + offset;
+    	entry_p = entryp + (Entry_p*) offset;
     }
 }
 
