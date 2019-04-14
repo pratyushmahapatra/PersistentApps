@@ -424,13 +424,7 @@ bool hashmapIntEquals(int keyA, int keyB) {
 }
 
 void recover_hashmap(struct Hashmap_p* map_p, Hashmap* map){
-	/*for (int i = 0; i < map_p->bucketCount; i++) {
-        Entry_p *entry = map_p->buckets[i];
-        while (entry != NULL) {
-            entry = entry->next; 
-            size++;
-        }
-    }*/
+
     map->size = map_p->size;
     // 0.75 load factor.
     size_t minimumBucketCount = map->size * 4 / 3;
@@ -559,12 +553,12 @@ int main(int argc, char * argv[]) {
     	struct Hashmap *map = hashmapCreate(4, hashmapIntHash, hashmapIntEquals);
         long long value;
         int key;
-        for (int i = 0; i < 32; i++) {
-            key = rand()%100;
+        for (int i = 0; i < 1000; i++) {
+            key = rand()%1000;
             value = rand()%100;
             //printf("Put : key: %d, value: %d\n", key, value);
             hashmapPut(map, key, value);
-            key = rand()%100;
+            key = rand()%1000;
             //printf("Remove : key: %d\n", key);
             hashmapRemove(map, key);
         }
