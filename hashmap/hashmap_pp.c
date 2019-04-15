@@ -591,16 +591,8 @@ int main(int argc, char * argv[]) {
 	    head->next = tail;
     	tail->prev = head; 
 	    
-    	for (int i = 0; i < 128; i++) {
-    		key = rand();
-			append_val(key);
-			value = rand();
-			hashmapPut(map, key, value);
-			key = select_val(); 	
-			hashmapRemove(map, key);
-    	}
 
-    	/*
+    	
 	    for (int i = 0; i < initIterations; i++)
 		{
 			key = rand();
@@ -628,7 +620,7 @@ int main(int argc, char * argv[]) {
             key = rand()%1000;
             //printf("Remove : key: %d\n", key);
             hashmapRemove(map, key);
-        } */
+        }
         print_hashmap(map);
     }
 }
