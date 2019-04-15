@@ -47,6 +47,7 @@
 #define BUCKET_COUNT 4
 #define DEL 5
 #define SIZE 6
+#define HASH 7
 
 typedef uint64_t hrtime_t;
 
@@ -79,15 +80,6 @@ hrtime_t rdtsc() {
     return (hrtime_t)hi << 32 | lo; 
 }
 
-typedef struct Entry_p Entry_p;
-struct Entry_p {
-    int key;
-    long long value;
-};
-struct Hashmap_p {
-    size_t size;
-};
-
 typedef struct Entry Entry;
 struct Entry {
     int key;
@@ -107,11 +99,17 @@ struct Hashmap {
 
 void flush(int op, int offset, long long value) {
     long addr;
-    struct Hashmap_p* map = (struct Hashmap_p*) hashmapp;
-    Entry_p* entry = (Entry_p*) entryp + offset; 
+    struct Hashmap* map = (struct Hashmap*) hashmapp;
+    Entry* entry = (Entry*) entryp + offset; 
     if (op == SIZE) {
     	map->size = (size_t)value;
-	} else if(op == KEY) {
+    } else if (op == BUCKETS) {
+        map->buckets[value] = entry;
+        addr = &map->buckets[value];
+	} else if (op == BUCKET_COUNT) {
+        map->bucketCount = (int) value;
+        addr = &map->bucketCount;
+    } else if(op == KEY) {
     	entry->key = (int) value;
         addr = &entry->key;
     } else if(op == VALUE) {
@@ -120,6 +118,17 @@ void flush(int op, int offset, long long value) {
     } else if (op == DEL) {
     	entry->key = NULL;
     	addr = &entry->key;
+    } else if (op == HASH) {
+        entry->hash = (int) value;
+        addr = &entry->hash;
+    }   else if (op == NEXT) {
+        if (value == NULL)
+            entry->next = NULL;
+        else {
+            Entry* next_entry = (Entry*) entryp + value;
+            entry->next = next_entry;
+            addr = &entry->next;
+        }
     }
     if (flush_begin == 0)
         flush_begin = rdtsc();
@@ -152,11 +161,16 @@ Hashmap* hashmapCreate(size_t initialCapacity, int (*hash)(int key), bool (*equa
     // 0.75 load factor.
     size_t minimumBucketCount = initialCapacity * 4 / 3;
     map->bucketCount = 1;
+    flush(BUCKET_COUNT, NULL, (long long)map->bucketCount);
     while (map->bucketCount <= minimumBucketCount) {
         // Bucket count must be power of 2.
         map->bucketCount <<= 1; 
+        flush(BUCKET_COUNT, NULL, (long long)map->bucketCount);
     }
     map->buckets = calloc(map->bucketCount, sizeof(Entry*));
+    for (int i = 0; i < map->bucketCount; i++) {
+        TODO
+    }
     if (map->buckets == NULL) {
         free(map);
         return NULL;
@@ -214,7 +228,14 @@ static void expandIfNecessary(Hashmap* map) {
                 Entry* next = entry->next;
                 size_t index = calculateIndex(newBucketCount, entry->hash);
                 entry->next = newBuckets[index];
+                if (entry->next == NULL)
+                    flush(NEXT, entry->offset, NULL);
+                else {
+                    Entry* new_next = entry->next;
+                    flush(NEXT, entry->offset, new_next->offset);
+                }
                 newBuckets[index] = entry;
+                flush(BUCKETS, entry->offset, index);
                 entry = next;
             }
         }
@@ -222,6 +243,8 @@ static void expandIfNecessary(Hashmap* map) {
         free(map->buckets);
         map->buckets = newBuckets;
         map->bucketCount = newBucketCount;
+        flush(BUCKET_COUNT, NULL, map->bucketCount);
+        fence();
     }
 }
 void hashmapLock(Hashmap* map) {
@@ -236,10 +259,12 @@ void hashmapFree(Hashmap* map) {
         Entry* entry = map->buckets[i];
         while (entry != NULL) {
             Entry* next = entry->next;
+            flush(DEL, entry->offset, NULL);
 			free(entry);
             entry = next;
         }
     }
+    fence();
     free(map->buckets);
     mutex_destroy(&map->lock);
     free(map);
@@ -268,6 +293,7 @@ static Entry* createEntry(int key, int hash, long long value) {
     entry->key = key;
 	flush(KEY, entry->offset, (long long)entry->key);
     entry->hash = hash;
+    flush(HASH, entry->offset, (long long)entry->hash);
     entry->value = (long long)value;
 	flush(VALUE, entry->offset, entry->value);
     entry->next = NULL;
@@ -286,8 +312,11 @@ static inline bool equalKeys(int keyA, int hashA, int keyB, int hashB,
 }
 void* hashmapPut(Hashmap* map, int key, long long value) {
     int hash = hashKey(map, key);
+    int bucketEmpty = 0;
     size_t index = calculateIndex(map->bucketCount, hash);
     Entry** p = &(map->buckets[index]);
+    if ((Entry* first = *p) == NULL)
+        bucketEmpty = 1;
     while (true) {
         Entry* current = *p;
         // Add a new entry.
@@ -299,6 +328,9 @@ void* hashmapPut(Hashmap* map, int key, long long value) {
             }
             map->size++;
             flush(SIZE, NULL, map->size);
+            if (bucketEmpty == 1) {
+                flush(BUCKETS, entry->offset, index);
+            }
             fence();
             expandIfNecessary(map);
             return NULL;
@@ -342,8 +374,11 @@ bool hashmapContainsKey(Hashmap* map, int key) {
 void* hashmapMemoize(Hashmap* map, int key, 
         long long (*initialValue)(int key, void* context), void* context) {
     int hash = hashKey(map, key);
+    int bucketEmpty = 0;
     size_t index = calculateIndex(map->bucketCount, hash);
     Entry** p = &(map->buckets[index]);
+    if ((Entry* first = *p) == NULL)
+        bucketEmpty = 1;
     while (true) {
         Entry* current = *p;
         // Add a new entry.
@@ -359,6 +394,9 @@ void* hashmapMemoize(Hashmap* map, int key,
             flush(VALUE, (*p)->offset, (*p)->value);
             map->size++;
             flush(SIZE, NULL, map->size);
+            if (bucketEmpty == 1) {
+                flush(BUCKETS, entry->offset, index);
+            }
             fence();
             expandIfNecessary(map);
             return value;
@@ -433,7 +471,7 @@ bool hashmapIntEquals(int keyA, int keyB) {
     return keyA == keyB;
 }
 
-void recover_hashmap(struct Hashmap_p* map_p, Hashmap* map){
+void recover_hashmap(struct Hashmap* map_p, Hashmap* map){
 
     map->size = map_p->size;
     // 0.75 load factor.
@@ -449,7 +487,7 @@ void recover_hashmap(struct Hashmap_p* map_p, Hashmap* map){
 	    return;
 	}
 
-    Entry_p *entry_p = entryp;
+    Entry *entry_p = entryp;
     int i = 0;
     int offset = 0;
     while (i < map->size) {
@@ -480,7 +518,7 @@ void recover_hashmap(struct Hashmap_p* map_p, Hashmap* map){
     		}
     	}
     	offset++;
-    	entry_p = entryp + sizeof(Entry_p)*offset;
+    	entry_p = entryp + sizeof(Entry)*offset;
     }
 }
 
@@ -525,8 +563,8 @@ int main(int argc, char * argv[]) {
     del_count = 0;
     append_count = 0;
     long addr = 0x0000010000000000;
-    long sizeentry = 100000000*sizeof(Entry_p);
-    int sizehashmap = sizeof(struct Hashmap_p);
+    long sizeentry = 100000000*sizeof(Entry);
+    int sizehashmap = sizeof(struct Hashmap);
     int ratio = atoi(argv[1]);
 
     int hashmap_fd, entry_fd, file_present;
@@ -577,7 +615,7 @@ int main(int argc, char * argv[]) {
     	map->equals = hashmapIntEquals;
     	mutex_init(&map->lock);
 
-    	struct Hashmap_p *mapp = (struct Hashmap_p*) hashmapp;
+    	struct Hashmap *mapp = (struct Hashmap*) hashmapp;
     	recover_hashmap(mapp, map);
     	print_hashmap(map);
     } else {
@@ -590,8 +628,6 @@ int main(int argc, char * argv[]) {
 	    tail = (list *) malloc(sizeof(list*));
 	    head->next = tail;
     	tail->prev = head; 
-	    
-
     	
 	    for (int i = 0; i < initIterations; i++)
 		{
