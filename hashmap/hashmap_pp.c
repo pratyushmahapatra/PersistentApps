@@ -585,15 +585,13 @@ int main(int argc, char * argv[]) {
     	struct Hashmap *map = hashmapCreate(4, hashmapIntHash, hashmapIntEquals);
         long long value;
         int key;
-        int initIterations = 100000;
-	    int ssIterations = (10000000)/(ratio + 1);
+        int initIterations = 1000000;
+	    int ssIterations = (200000000)/(ratio + 1);
 	    head = (list *) malloc(sizeof(list*));
 	    tail = (list *) malloc(sizeof(list*));
 	    head->next = tail;
     	tail->prev = head; 
 	    
-
-    	
 	    for (int i = 0; i < initIterations; i++)
 		{
 			key = rand();
