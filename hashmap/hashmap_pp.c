@@ -63,6 +63,16 @@ void *hashmapp;
 void* entryp;
 int offset;
 
+typedef struct list{
+      int data;
+      struct list *next;
+      struct list *prev;
+} list;
+
+list *head;
+list *tail;
+
+
 hrtime_t rdtsc() {
     unsigned long int lo, hi;
     __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
@@ -485,6 +495,27 @@ void print_hashmap(Hashmap *map){
 	}
 }
 
+//Append to list
+void append_val(int data) {
+	tail->data = data;
+	list * new_tail = (list *) malloc(sizeof(list*));
+	new_tail->prev = tail;
+	tail->next = new_tail;
+	tail = new_tail;
+}
+
+int select_val() {
+	list *element = head->next;
+	if (element == NULL)
+		return -1;
+	list *next_element = element->next;
+	int data = element->data;
+	head->next = next_element;
+	next_element->prev = head;
+	free(element);
+	return data;
+}
+
 int main(int argc, char * argv[]) {
 
     offset = 0;
@@ -553,6 +584,31 @@ int main(int argc, char * argv[]) {
     	struct Hashmap *map = hashmapCreate(4, hashmapIntHash, hashmapIntEquals);
         long long value;
         int key;
+        int initIterations = 100000;
+	    int ssIterations = (10000000)/(ratio + 1);
+	    head = (list *) malloc(sizeof(list*));
+	    tail = (list *) malloc(sizeof(list*));
+	    head->next = tail;
+    	tail->prev = head; 
+	    
+	    for (int i = 0; i < initIterations; i++)
+		{
+			key = rand();
+			append_val(key);
+			value = rand();
+			hashmapPut(map, key, value);
+		}
+		for (int i = 0; i < ssIterations; i++)
+		{
+    		for (int j = 0; j < ratio; j++) {
+		    	int insert_val = rand();
+		    	append_val(insert_val);
+		    	root = insert(root, insert_val, rand());
+        	}    
+			key = select_val(); 	
+			hashmapRemove(map, key);
+		}
+
         for (int i = 0; i < 1000; i++) {
             key = rand()%1000;
             value = rand()%100;
