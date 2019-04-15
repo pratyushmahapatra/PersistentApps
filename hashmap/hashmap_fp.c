@@ -168,9 +168,6 @@ Hashmap* hashmapCreate(size_t initialCapacity, int (*hash)(int key), bool (*equa
         flush(BUCKET_COUNT, NULL, (long long)map->bucketCount);
     }
     map->buckets = calloc(map->bucketCount, sizeof(Entry*));
-    for (int i = 0; i < map->bucketCount; i++) {
-        TODO
-    }
     if (map->buckets == NULL) {
         free(map);
         return NULL;
@@ -315,7 +312,8 @@ void* hashmapPut(Hashmap* map, int key, long long value) {
     int bucketEmpty = 0;
     size_t index = calculateIndex(map->bucketCount, hash);
     Entry** p = &(map->buckets[index]);
-    if ((Entry* first = *p) == NULL)
+    Entry* first = *p;
+    if (first == NULL)
         bucketEmpty = 1;
     while (true) {
         Entry* current = *p;
@@ -329,7 +327,7 @@ void* hashmapPut(Hashmap* map, int key, long long value) {
             map->size++;
             flush(SIZE, NULL, map->size);
             if (bucketEmpty == 1) {
-                flush(BUCKETS, entry->offset, index);
+                flush(BUCKETS, (*p)->offset, index);
             }
             fence();
             expandIfNecessary(map);
@@ -377,7 +375,8 @@ void* hashmapMemoize(Hashmap* map, int key,
     int bucketEmpty = 0;
     size_t index = calculateIndex(map->bucketCount, hash);
     Entry** p = &(map->buckets[index]);
-    if ((Entry* first = *p) == NULL)
+    Entry* first = *p;
+    if (first == NULL)
         bucketEmpty = 1;
     while (true) {
         Entry* current = *p;
@@ -395,7 +394,7 @@ void* hashmapMemoize(Hashmap* map, int key,
             map->size++;
             flush(SIZE, NULL, map->size);
             if (bucketEmpty == 1) {
-                flush(BUCKETS, entry->offset, index);
+                flush(BUCKETS, (*p)->offset, index);
             }
             fence();
             expandIfNecessary(map);
