@@ -134,7 +134,7 @@ void flush(int op, int offset, long long value) {
         flush_begin = rdtsc();
      hrtime_t flush_begin_s = rdtsc();
     _mm_clflushopt(addr);
-    //flush_count++;
+    flush_count++;
     hrtime_t flush_end = rdtsc(); 
     flush_time_s += (flush_end - flush_begin_s);
 }
@@ -142,7 +142,7 @@ void flush(int op, int offset, long long value) {
 void fence() {
     hrtime_t fence_begin = rdtsc(); 
     __asm__ __volatile__ ("mfence");
-    //fence_count++;
+    fence_count++;
     hrtime_t fence_end = rdtsc(); 
     flush_time += (fence_end - flush_begin);
     flush_time_s += (fence_end - fence_begin);
@@ -557,10 +557,9 @@ int main(int argc, char * argv[]) {
 
     offset = 0;
     hrtime_t program_start;
+    hrtime_t program_end;
     flush_count = 0;
     fence_count = 0;
-    del_count = 0;
-    append_count = 0;
     long addr = 0x0000010000000000;
     long sizeentry = 100000000*sizeof(Entry);
     int sizehashmap = sizeof(struct Hashmap);
@@ -635,6 +634,10 @@ int main(int argc, char * argv[]) {
 			value = rand();
 			hashmapPut(map, key, value);
 		}
+
+        flush_count = 0;
+        fence_count = 0;
+        program_start = rdtsc();
 		for (int i = 0; i < ssIterations; i++)
 		{
     		for (int j = 0; j < ratio; j++) {
@@ -646,16 +649,9 @@ int main(int argc, char * argv[]) {
 			key = select_val(); 	
 			hashmapRemove(map, key);
 		}
-
-        for (int i = 0; i < 1000; i++) {
-            key = rand()%1000;
-            value = rand()%100;
-            //printf("Put : key: %d, value: %d\n", key, value);
-            hashmapPut(map, key, value);
-            key = rand()%1000;
-            //printf("Remove : key: %d\n", key);
-            hashmapRemove(map, key);
-        }
-        print_hashmap(map);
+        program_end = rdtsc();
+        printf("Program time: %f msec Flush time: %f msec Non overlapping Flush time : %f msec \n", ((double)(program_end - program_start)/(3.4*1000*1000)), ((double)flush_time)/(3.4*1000*1000), ((double)flush_time_s)/(3.4*1000*1000));
+        printf("Number of flushes: %ld, Number of fences: %ld\n", flush_count, fence_count);
+        //print_hashmap(map);
     }
 }
