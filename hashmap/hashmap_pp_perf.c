@@ -238,7 +238,6 @@ static Entry* createEntry(int key, int hash, long long value) {
         return NULL;
     }
 	offset++;
-	entry->offset = offset;
     entry->key = key;
     entry->hash = hash;
     entry->value.value1 = (long long)value;
