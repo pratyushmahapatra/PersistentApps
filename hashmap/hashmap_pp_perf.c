@@ -179,7 +179,7 @@ static void expandIfNecessary(Hashmap* map) {
             // Abort expansion.
             return;
         }
-        
+
         // Move over existing entries.
         size_t i;
         for (i = 0; i < map->bucketCount; i++) {
@@ -192,10 +192,22 @@ static void expandIfNecessary(Hashmap* map) {
                 entry = next;
             }
         }
-        // Copy over internals.
-        free(map->buckets);
-        map->buckets = newBuckets;
         map->bucketCount = newBucketCount;
+        for (i = 0; i < map->bucketCount; i++) {
+            map->buckets[i] = NULL;
+        }
+        // Copy over internals.
+        for (i = 0; i < map->bucketCount; i++) {
+            Entry* entry = newBuckets[i];
+            while (entry != NULL) {
+                Entry* next = entry->next;
+                entry->next = map->buckets[i];
+                map->buckets[i] = entry;
+                entry = next;
+            }
+        }
+        map->buckets = newBuckets;
+        free(newBuckets);
     }
 }
 void hashmapLock(Hashmap* map) {
