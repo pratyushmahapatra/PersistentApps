@@ -427,7 +427,6 @@ void recover_hashmap(Hashmap* map){
     while (i < map->size) {
     	if (entry_p->key != NULL) {
     		i++;
-    		entry_p->offset = offset;
     		int hash = hashKey(map, entry_p->key);
     		entry_p->hash = hash;
     		size_t index = calculateIndex(map->bucketCount, entry_p->hash);
@@ -436,7 +435,7 @@ void recover_hashmap(Hashmap* map){
     		map->buckets[index] = entry_p;
     	}
     	offset++;
-    	entry_p = entryp + sizeof(Entry_p)*offset;
+    	entry_p = entryp + sizeof(Entry)*offset;
     }
 }
 
