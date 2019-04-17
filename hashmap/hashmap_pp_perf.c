@@ -76,7 +76,7 @@ struct Value{
 	long long value1;
 	long long value2;
 	long long value3; 
-}
+};
 
 
 typedef struct Entry Entry;
