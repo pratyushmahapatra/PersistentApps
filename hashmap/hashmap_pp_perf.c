@@ -421,7 +421,7 @@ void recover_hashmap(Hashmap* map){
 	    return;
 	}
 
-    Entry_p *entry_p = entryp;
+    Entry *entry_p = entryp;
     int i = 0;
     int offset = 0;
     while (i < map->size) {
