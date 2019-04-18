@@ -146,7 +146,7 @@ Hashmap* hashmapCreate(size_t initialCapacity, int (*hash)(int key), bool (*equa
 
     map->hash = hash;
     map->equals = equals;
-    flush(&map->)
+    flush(&map->hash, sizeof(&map->hash) + sizeof(&map->equals));
     fence();    
     mutex_init(&map->lock);
     
