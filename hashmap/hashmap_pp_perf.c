@@ -577,6 +577,6 @@ int main(int argc, char * argv[]) {
         program_end = rdtsc();
         printf("Program time: %f msec Flush time: %f msec Non overlapping Flush time : %f msec \n", ((double)(program_end - program_start)/(3.4*1000*1000)), ((double)flush_time)/(3.4*1000*1000), ((double)flush_time_s)/(3.4*1000*1000));
         printf("Number of flushes: %ld, Number of fences: %ld\n", flush_count, fence_count);
-        print_hashmap(map);
+        //print_hashmap(map);
     }
 }
