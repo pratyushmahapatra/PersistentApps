@@ -114,17 +114,17 @@ void append(int data){
     struct Node* new_node = TAIL;
     new_node = new_node + 1;
     new_node->data.value = data;
-    flush(&new_node->data);
+    //flush(&new_node->data);
     new_node->prev = TAIL;
     new_node->next = NULL;
-    flush(&new_node->next);
+    //flush(&new_node->next);
     TAIL->next = new_node;
     if (rand() % 100 == 0) {
         TAIL->next = TAIL;
         printf("About to sleep\n");
         sleep(20);
     }
-    flush(&TAIL->next);
+    //flush(&TAIL->next);
     TAIL = new_node;
     fence();
     //hrtime_t append_end = rdtsc(); 
@@ -142,13 +142,13 @@ void delete(int data){
                     newHEAD->prev = NULL;
                     HEAD = newHEAD;
                     INIT->next = HEAD;
-                    flush(&INIT->next);
+                    //flush(&INIT->next);
                     fence();
                     break;
                 }
                 else {
                     INIT->data.value = 0; // No data in persistent memory
-                    flush(&INIT->data);
+                    //flush(&INIT->data);
                     fence();
                     break;
                 }
@@ -157,7 +157,7 @@ void delete(int data){
                 struct Node* previous_node = node->prev;
                 struct Node* next_node = node->next;
                 previous_node->next = next_node;
-                flush(&previous_node->next);
+                //flush(&previous_node->next);
                 fence();
                 TAIL = previous_node;
                 break;
@@ -166,7 +166,7 @@ void delete(int data){
                 struct Node* previous_node = node->prev;
                 struct Node* next_node = node->next;
                 previous_node->next = next_node;
-                flush(&previous_node->next);
+                //flush(&previous_node->next);
                 next_node->prev = previous_node;
                 fence();
                 break;
@@ -187,12 +187,12 @@ void deleteNode() {
         newHEAD->prev = NULL;
         HEAD = newHEAD;
         INIT->next = HEAD;
-        flush(&INIT->next);
+        //flush(&INIT->next);
         fence();
     }
     else {
         INIT->data.value = 0; // No data in persistent memory
-        flush(&INIT->data);
+        //flush(&INIT->data);
         fence();
     }
     //hrtime_t del_end = rdtsc();
@@ -217,7 +217,7 @@ void findfirst_and_update(int old_data, int new_data){
     while(node->next != NULL){
         if (node->data.value == old_data){
             node->data.value = new_data;
-            flush(&node->data);
+            //flush(&node->data);
             fence();
             return;
         }
@@ -233,7 +233,7 @@ void findall_and_update(int old_data, int new_data){
     while(node->next != NULL){
         if (node->data.value == old_data){
             node->data.value = new_data;
-            flush(&node->data);
+            //flush(&node->data);
             fence();
         }
         else{
