@@ -73,10 +73,14 @@ hrtime_t rdtsc() {
 
 typedef struct Value Value;
 struct Value{
-	long long value1;
-	long long value2;
-	long long value3; 
-};
+    long long value1; //8B
+    long long value2; //8B
+    long long value3; //8B
+    long long value4; //8B
+    long long value5; //8B
+    long long value6; //8B
+    long long value7; //8B
+}; //56B
 
 
 typedef struct Entry Entry;
