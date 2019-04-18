@@ -89,15 +89,16 @@ struct Entry {
     Value value;
     int hash;
     Entry* next;
-};
+}__attribute__((__aligned__(64)));
+
 struct Hashmap {
-    Entry** buckets;
     size_t bucketCount;
     int (*hash)(int key);
     bool (*equals)(int keyA, int keyB);
     mutex_t lock; 
     size_t size;
-};
+    Entry** buckets;
+}__attribute__((__aligned__(64)));
 
 void flush(long addr, int size) {
 	if (flush_begin == 0)
@@ -210,7 +211,6 @@ static void expandIfNecessary(Hashmap* map) {
                 entry = next;
             }
         }
-        map->buckets = newBuckets;
         free(newBuckets);
     }
 }
@@ -226,13 +226,11 @@ void hashmapFree(Hashmap* map) {
         Entry* entry = map->buckets[i];
         while (entry != NULL) {
             Entry* next = entry->next;
-			free(entry);
+			entry->key = NULL;
             entry = next;
         }
     }
-    free(map->buckets);
     mutex_destroy(&map->lock);
-    free(map);
 }
 #ifdef __clang__
 __attribute__((no_sanitize("integer")))

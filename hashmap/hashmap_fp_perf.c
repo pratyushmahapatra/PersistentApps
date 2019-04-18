@@ -199,6 +199,7 @@ static void expandIfNecessary(Hashmap* map) {
             }
         }
         map->bucketCount = newBucketCount;
+        flush(&map->bucketCount, sizeof(&map->bucketCount));
         for (i = 0; i < map->bucketCount; i++) {
             map->buckets[i] = NULL;
         }
@@ -208,11 +209,13 @@ static void expandIfNecessary(Hashmap* map) {
             while (entry != NULL) {
                 Entry* next = entry->next;
                 entry->next = map->buckets[i];
+                flush(&entry->next, sizeof(&entry->next));
                 map->buckets[i] = entry;
+                flush(&map->buckets[i], sizeof(&map->buckets[i]));
                 entry = next;
             }
         }
-        map->buckets = newBuckets;
+        fence();
         free(newBuckets);
     }
 }
@@ -228,13 +231,11 @@ void hashmapFree(Hashmap* map) {
         Entry* entry = map->buckets[i];
         while (entry != NULL) {
             Entry* next = entry->next;
-			free(entry);
+			entry->key = NULL;
             entry = next;
         }
     }
-    free(map->buckets);
     mutex_destroy(&map->lock);
-    free(map);
 }
 #ifdef __clang__
 __attribute__((no_sanitize("integer")))
@@ -260,7 +261,7 @@ static Entry* createEntry(int key, int hash, long long value) {
     entry->hash = hash;
     entry->value.value1 = (long long)value;
     entry->next = NULL;
-    flush(entry, sizeof(&entry->value) + sizeof(&entry->key));
+    flush(entry, sizeof(entry));
     fence();
 	return entry;
 }
