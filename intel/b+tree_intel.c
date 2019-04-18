@@ -122,8 +122,22 @@ list *tail;
  * to change the type and content
  * of the value field.
  */
+
+typedef struct Value Value;
+struct Value{
+    long long value; //8B
+    long long padding1; //8B
+    long long padding2; //8B
+    long long padding3; //8B
+    long long padding4; //8B
+    long long padding5; //8B
+    long long padding6; //8B
+    long long padding7; //8B
+}; //64B
+
+
 typedef struct record {
-	int value;
+	Value value;
 } record;
 
 /* Type representing a node in the B+ tree.
@@ -428,7 +442,7 @@ void find_and_print(node * const root, int key, bool verbose) {
 		printf("Record not found under key %d.\n", key);
 	else 
 		printf("Record at %p -- key %d, value %d.\n",
-				r, key, r->value);
+				r, key, r->value.value);
 }
 
 
@@ -451,7 +465,7 @@ void find_and_print_range(node * const root, int key_start, int key_end,
 					returned_keys[i],
 					returned_pointers[i],
 					((record *)
-					 returned_pointers[i])->value);
+					 returned_pointers[i])->value.value);
 	}
 }
 
@@ -579,7 +593,7 @@ record * make_record(int value) {
 		exit(EXIT_FAILURE);
 	}
 	else {
-		new_record->value = value;
+		new_record->value.value = value;
 	}
 	flush(new_record, sizeof(record));
 	fence();
@@ -949,7 +963,7 @@ node * insert(node * root, int key, int value) {
          * the value and return the tree.
          */
 
-        record_pointer->value = value;
+        record_pointer->value.value = value;
         flush(record_pointer, sizeof(record));
         fence();
         return root;
