@@ -256,7 +256,7 @@ static Entry* createEntry(int key, int hash, long long value) {
     entry->hash = hash;
     entry->value.value1 = (long long)value;
     entry->next = NULL;
-    flush(entry, sizeof(&entry->value) + sizeof(&entry->key));
+    flush(entry, sizeof(entry->value) + sizeof(&entry->key));
     fence();
 	return entry;
 }
@@ -293,7 +293,7 @@ void* hashmapPut(Hashmap* map, int key, long long value) {
         if (equalKeys(current->key, current->hash, key, hash, map->equals)) {
             long long oldValue = current->value.value1;
             current->value.value1 = value;
-            flush(&current->value, sizeof(&current->value));
+            flush(current->value, sizeof(current->value));
             fence();
             return oldValue;
         }
@@ -342,7 +342,7 @@ void* hashmapMemoize(Hashmap* map, int key,
             long long value;
             value = (initialValue(key, context));
             (*p)->value.value1 = value;
-            flush(&((*p)->value), sizeof(&((*p)->value)));
+            flush(((*p)->value), sizeof(((*p)->value)));
             map->size++;
             flush(&map->size, sizeof(&map->size));
             fence();

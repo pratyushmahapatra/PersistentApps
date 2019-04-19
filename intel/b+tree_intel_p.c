@@ -136,7 +136,7 @@ struct Value{
 
 typedef struct record {
 	Value value;
-} record;
+} record __attribute__((__aligned__(64)));
 
 /* Type representing a node in the B+ tree.
  * This type is general enough to serve for both
@@ -173,7 +173,7 @@ typedef struct node {
 	bool is_leaf;
 	int num_keys;
 	struct node * next; // Used for queue.
-} node;
+} node __attribute__((__aligned__(64)));
 
 node* INIT;
 
