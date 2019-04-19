@@ -1565,7 +1565,7 @@ int main(int argc, char ** argv) {
     	return EXIT_SUCCESS;
     }
     int initIterations = 100000;
-    int ssIterations = (10000000)/(ratio + 1);
+	int ssIterations = (100000000)/(ratio + 1);
     head = (list *) malloc(sizeof(list*));
     tail = (list *) malloc(sizeof(list*));
     head->next = tail;

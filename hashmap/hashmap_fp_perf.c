@@ -551,7 +551,7 @@ int main(int argc, char * argv[]) {
         long long value;
         int key;
         int initIterations = 100000;
-	    int ssIterations = (100000000)/(ratio + 1);
+        int ssIterations = (100000000)/(ratio + 1);
 	    head = (list *) malloc(sizeof(list*));
 	    tail = (list *) malloc(sizeof(list*));
 	    head->next = tail;

@@ -318,13 +318,15 @@ int main(int argc, char *argv[]){
 
     /*Store HEAD in persistent mem*/
     /*Normal testing first to see if the program works*/
-    int SSiter = (100000000)/(ratio + 1);
+    int initIterations = 100000;
+	int ssIterations = (100000000)/(ratio + 1);
+    
     if (file_present) {
         reconstruct_list();   
     }
     else {    
         create(1);
-        for (int i = 0; i < 10000000; i++) {
+        for (int i = 0; i < initIterations; i++) {
             append(rand());
         }
         program_start = rdtsc();
@@ -334,7 +336,7 @@ int main(int argc, char *argv[]){
         flush_time_s = 0;
         del_time = 0;
         append_time = 0;
-        for (int i = 0; i < SSiter; i++) {
+        for (int i = 0; i < ssIterations; i++) {
             for (int j = 0; j < ratio; j++)
                 append(rand());
             deleteNode();
