@@ -100,6 +100,7 @@ struct Hashmap {
 void flush(int op, int offset, long long value) {
     long addr;
     struct Hashmap* map = (struct Hashmap*) hashmapp;
+    map->buckets = hashmapp + sizeof(struct Hashmap);
     Entry* entry = (Entry*) entryp + offset; 
     if (op == SIZE) {
     	map->size = (size_t)value;
@@ -127,8 +128,8 @@ void flush(int op, int offset, long long value) {
         else {
             Entry* next_entry = (Entry*) entryp + value;
             entry->next = next_entry;
-            addr = &entry->next;
         }
+        addr = &entry->next;
     }
     if (flush_begin == 0)
         flush_begin = rdtsc();
@@ -561,8 +562,8 @@ int main(int argc, char * argv[]) {
     flush_count = 0;
     fence_count = 0;
     long addr = 0x0000010000000000;
-    long sizeentry = 100000000*sizeof(Entry);
-    int sizehashmap = sizeof(struct Hashmap);
+    long sizeentry = 200000000*sizeof(Entry);
+    int sizehashmap = sizeof(struct Hashmap) + 200000000*sizeof(Entry*);
     int ratio = atoi(argv[1]);
 
     int hashmap_fd, entry_fd, file_present;
@@ -620,8 +621,8 @@ int main(int argc, char * argv[]) {
     	struct Hashmap *map = hashmapCreate(4, hashmapIntHash, hashmapIntEquals);
         long long value;
         int key;
-        int initIterations = 1000000;
-	    int ssIterations = (200000000)/(ratio + 1);
+        int initIterations = 100000;
+	    int ssIterations = (100000000)/(ratio + 1);
 	    head = (list *) malloc(sizeof(list*));
 	    tail = (list *) malloc(sizeof(list*));
 	    head->next = tail;

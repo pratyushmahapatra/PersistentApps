@@ -125,7 +125,7 @@ void flush(int op, int offset, long long value) {
         flush_begin = rdtsc();
      hrtime_t flush_begin_s = rdtsc();
     _mm_clflushopt(addr);
-    //flush_count++;
+    flush_count++;
     hrtime_t flush_end = rdtsc(); 
     flush_time_s += (flush_end - flush_begin_s);
 }
@@ -133,7 +133,7 @@ void flush(int op, int offset, long long value) {
 void fence() {
     hrtime_t fence_begin = rdtsc(); 
     __asm__ __volatile__ ("mfence");
-    //fence_count++;
+    fence_count++;
     hrtime_t fence_end = rdtsc(); 
     flush_time += (fence_end - flush_begin);
     flush_time_s += (fence_end - fence_begin);
@@ -585,8 +585,8 @@ int main(int argc, char * argv[]) {
     	struct Hashmap *map = hashmapCreate(4, hashmapIntHash, hashmapIntEquals);
         long long value;
         int key;
-        int initIterations = 1000000;
-	    int ssIterations = (200000000)/(ratio + 1);
+        int initIterations = 100000;
+	    int ssIterations = (100000000)/(ratio + 1);
 	    head = (list *) malloc(sizeof(list*));
 	    tail = (list *) malloc(sizeof(list*));
 	    head->next = tail;

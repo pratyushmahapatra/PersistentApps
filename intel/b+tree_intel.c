@@ -99,8 +99,9 @@ int num_nodes;
 int num_records;
 typedef uint64_t hrtime_t;
 hrtime_t flush_time;
+hrtime_t flush_time_s;
 hrtime_t fence_time;
-hrtime_t start, end;
+hrtime_t program_start, program_end;
 int flush_count, fence_count;
 
 
@@ -1557,7 +1558,6 @@ int main(int argc, char ** argv) {
     if (record_p == (void *) -1 ) {
         perror("mmap");
     }
-    start = rdtsc();
 
     if (file_present) {
     	root = reconstruct_tree(root);
@@ -1577,6 +1577,11 @@ int main(int argc, char ** argv) {
 		append_val(insert_val);
 		root = insert(root, insert_val, rand());	
 	}
+	flush_count = 0;
+	fence_count = 0;
+    flush_time = 0;
+    flush_time_s = 0;
+    program_start = rdtsc();
 	for (int i = 0; i < ssIterations; i++)
 	{
         for (int j = 0; j < ratio; j++) {
@@ -1589,7 +1594,7 @@ int main(int argc, char ** argv) {
 	}
 
 
-	end = rdtsc();
+	program_end = rdtsc();
 	//print_tree(root);
     printf("Program time: %f msec Flush time: %f msec Non overlapping Flush time : %f msec \n", ((double)(program_end - program_start)/(3.4*1000*1000)), ((double)flush_time)/(3.4*1000*1000), ((double)flush_time_s)/(3.4*1000*1000));
     printf("Number of flushes: %ld, Number of fences: %ld\n", flush_count, fence_count);
