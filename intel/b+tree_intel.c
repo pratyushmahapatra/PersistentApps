@@ -267,15 +267,23 @@ node * redistribute_nodes(node * root, node * n, node * neighbor,
 node * delete_entry(node * root, node * n, int key, void * pointer);
 node * delete(node * root, int key);
 
+hrtime_t flush_begin;
+hrtime_t flush_time;
+hrtime_t flush_time_s;
+
 
 void flush(long addr , int size) {
-    hrtime_t flush_begin = rdtsc();
+	if (flush_begin == 0)
+    	flush_begin = rdtsc();
+    hrtime_t flush_begin_s = rdtsc();
+    
     for (int i=0; i <size; i += 64) {
     	_mm_clflushopt(addr + i);
     	flush_count++;
 	}
+
     hrtime_t flush_end = rdtsc(); 
-    flush_time += (flush_end - flush_begin);
+    flush_time_s += (flush_end - flush_begin_s);
 }
 
 void fence() {
@@ -283,7 +291,9 @@ void fence() {
     __asm__ __volatile__ ("mfence");
     fence_count++;
     hrtime_t fence_end = rdtsc(); 
-    fence_time += (fence_end - fence_begin);
+    flush_time += (fence_end - flush_begin);
+    flush_time_s += (fence_end - fence_begin);
+    flush_begin = 0;
 }
 
 
@@ -1580,8 +1590,8 @@ int main(int argc, char ** argv) {
 
 
 	end = rdtsc();
-	print_tree(root);
-	printf("Program time: %f , Fence time: %f Flush time: %f\n", ((double)(end - start)/(3.4*1000*1000)), ((double)fence_time)/(3.4*1000*1000), ((double)flush_time)/(3.4*1000*1000));
+	//print_tree(root);
+    printf("Program time: %f msec Flush time: %f msec Non overlapping Flush time : %f msec \n", ((double)(program_end - program_start)/(3.4*1000*1000)), ((double)flush_time)/(3.4*1000*1000), ((double)flush_time_s)/(3.4*1000*1000));
     printf("Number of flushes: %ld, Number of fences: %ld\n", flush_count, fence_count);
     munmap(node_p, size);
     close(node_fd);

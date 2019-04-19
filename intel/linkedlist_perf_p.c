@@ -342,8 +342,8 @@ int main(int argc, char *argv[]){
     }
 
     hrtime_t program_end = rdtsc();
-    //printf("Program time: %f msec Flush time: %f msec Non overlapping Flush time : %f msec \n", ((double)(program_end - program_start)/(3.4*1000*1000)), ((double)flush_time)/(3.4*1000*1000), ((double)flush_time_s)/(3.4*1000*1000));
-    //printf("Number of flushes: %ld, Number of fences: %ld Num deletes : %ld Num appends : %ld\n", flush_count, fence_count, del_count, append_count);
+    printf("Program time: %f msec Flush time: %f msec Non overlapping Flush time : %f msec \n", ((double)(program_end - program_start)/(3.4*1000*1000)), ((double)flush_time)/(3.4*1000*1000), ((double)flush_time_s)/(3.4*1000*1000));
+    printf("Number of flushes: %ld, Number of fences: %ld\n", flush_count, fence_count);
     munmap(segmentp, size);
     close(segment_fd);
     return 0;
