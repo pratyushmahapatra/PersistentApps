@@ -1,0 +1,6 @@
+Program time: 72260.696521 msec Flush time: 56648.583806 msec Non overlapping Flush time : 52269.478991 msec 
+Number of flushes: 180000000, Number of fences: 100000000
+Program time: 54959.722702 msec Flush time: 39580.596684 msec Non overlapping Flush time : 34445.472898 msec 
+Number of flushes: 180000000, Number of fences: 100000000
+Program time: 71941.671250 msec Flush time: 56511.391321 msec Non overlapping Flush time : 52298.964659 msec 
+Number of flushes: 180000000, Number of fences: 100000000
