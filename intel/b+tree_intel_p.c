@@ -1519,7 +1519,7 @@ int main(int argc, char ** argv) {
 
     int ratio = atoi(argv[1]);
 	long addr = 0x0000010000000000;
-    long size = 0x0000000100000000;
+    long size = 0x0000000200000000;
     int node_fd, record_fd, file_present;
     if  (access("/mnt/ext4-pmem22/persistent_apps/b+tree_new_nodes.txt", F_OK) != -1) {
         printf("File exists\n");

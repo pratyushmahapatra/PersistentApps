@@ -1514,7 +1514,7 @@ int main(int argc, char ** argv) {
 	num_records = 0;
 	num_nodes = 0;
 	long addr = 0x0000010000000000;
-    long size = 0x0000000100000000;
+    long size = 0x0000000200000000;
     int ratio = atoi(argv[1]);
 
     int node_fd, record_fd, file_present;

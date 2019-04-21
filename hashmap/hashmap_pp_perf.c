@@ -494,8 +494,8 @@ int main(int argc, char * argv[]) {
     del_count = 0;
     append_count = 0;
     long addr = 0x0000010000000000;
-    long sizeentry = 100000000*sizeof(Entry);
-    int sizehashmap = sizeof(struct Hashmap) + 100000000*sizeof(Entry*) ;
+    long sizeentry = 200000000*sizeof(Entry);
+    int sizehashmap = sizeof(struct Hashmap) + 200000000*sizeof(Entry*) ;
     int ratio = atoi(argv[1]);
 
     int hashmap_fd, entry_fd, file_present;

@@ -71,13 +71,15 @@ hrtime_t rdtsc() {
 } 
 
 void flush(long addr , int size) {
-    hrtime_t flush_begin = rdtsc();
+    if (flush_begin == 0)
+        flush_begin = rdtsc();
+    hrtime_t flush_begin_s = rdtsc();
     for (int i=0; i <size; i += 64) {
     	_mm_clflushopt(addr + i);
     	flush_count++;
 	}
     hrtime_t flush_end = rdtsc(); 
-    flush_time += (flush_end - flush_begin);
+    flush_time_s += (flush_end - flush_begin_s);
 }
 
 void fence() {
@@ -279,7 +281,7 @@ int main(int argc, char *argv[]){
 	del_count = 0;
 	append_count = 0;
     long addr = 0x0000010000000000;
-    long size = 0x0000000100000000;
+    long size = 0x0000001000000000;
 	int ratio = atoi(argv[1]);
 
 
@@ -321,6 +323,7 @@ int main(int argc, char *argv[]){
             append(rand());
         }
         program_start = rdtsc();
+        flush_begin = 0;
         flush_count = 0;
         fence_count = 0;
         flush_time = 0;
@@ -335,8 +338,8 @@ int main(int argc, char *argv[]){
     }
 
     hrtime_t program_end = rdtsc();
-    //printf("Program time: %f msec Flush time: %f msec Non overlapping Flush time : %f msec \n", ((double)(program_end - program_start)/(3.4*1000*1000)), ((double)flush_time)/(3.4*1000*1000), ((double)flush_time_s)/(3.4*1000*1000));
-    //printf("Number of flushes: %ld, Number of fences: %ld Num deletes : %ld Num appends : %ld\n", flush_count, fence_count, del_count, append_count);
+    printf("Program time: %f msec Flush time: %f msec Non overlapping Flush time : %f msec \n", ((double)(program_end - program_start)/(3.4*1000*1000)), ((double)flush_time)/(3.4*1000*1000), ((double)flush_time_s)/(3.4*1000*1000));
+    printf("Number of flushes: %ld, Number of fences: %ld\n", flush_count, fence_count);
     munmap(segmentp, size);
     close(segment_fd);
     return 0;
