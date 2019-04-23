@@ -140,7 +140,7 @@ Hashmap* hashmapCreate(size_t initialCapacity, int (*hash)(int key), bool (*equa
         // Bucket count must be power of 2.
         map->bucketCount <<= 1; 
     }
-    map->buckets = hashmapp + sizeof(Hashmap);
+    map->buckets = hashmapp + sizeof(struct Hashmap);
     map->size = 0;
     flush(&map->size, sizeof(&map->size));
 
@@ -261,7 +261,7 @@ static Entry* createEntry(int key, int hash, long long value) {
     entry->hash = hash;
     entry->value.value1 = (long long)value;
     entry->next = NULL;
-    flush(entry, sizeof(entry));
+    flush(entry, sizeof(struct Entry));
     fence();
 	return entry;
 }
@@ -471,7 +471,7 @@ void print_hashmap(Hashmap *map){
 //Append to list
 void append_val(int data) {
 	tail->data = data;
-	list * new_tail = (list *) malloc(sizeof(list*));
+	list * new_tail = (list *) malloc(sizeof(list));
 	new_tail->prev = tail;
 	tail->next = new_tail;
 	tail = new_tail;
@@ -499,7 +499,7 @@ int main(int argc, char * argv[]) {
     del_count = 0;
     append_count = 0;
     long addr = 0x0000010000000000;
-    long sizeentry = 200000000*sizeof(Entry);
+    long sizeentry = 200000000*sizeof(struct Entry);
     int sizehashmap = sizeof(struct Hashmap) + 200000000*sizeof(Entry*) ;
     int ratio = atoi(argv[1]);
 
