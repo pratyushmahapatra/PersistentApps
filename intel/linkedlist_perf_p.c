@@ -104,8 +104,8 @@ void create(int data){
     HEAD = new_node;
     TAIL = new_node;
     INIT->next = HEAD;
-    flush(INIT, sizeof(INIT));
-    flush(new_node, sizeof(new_node));
+    flush(INIT, sizeof(struct Node));
+    flush(new_node, sizeof(struct Node));
     fence();
 }
 
@@ -118,7 +118,7 @@ void append(int data){
     new_node->data.value = data;
     new_node->prev = TAIL;
     new_node->next = NULL;
-    flush(new_node , sizeof(new_node));
+    flush(new_node , sizeof(struct Node));
     TAIL->next = new_node;
     flush(&TAIL->next, sizeof(&TAIL->next));
     TAIL = new_node;
