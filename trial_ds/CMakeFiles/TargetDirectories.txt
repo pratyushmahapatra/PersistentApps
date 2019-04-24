@@ -1,0 +1,6 @@
+/root/pratyush/PersistentApps/trial_ds/CMakeFiles/rebuild_cache.dir
+/root/pratyush/PersistentApps/trial_ds/CMakeFiles/trial_ds_8.dir
+/root/pratyush/PersistentApps/trial_ds/CMakeFiles/trial_ds_16.dir
+/root/pratyush/PersistentApps/trial_ds/CMakeFiles/trial_ds_64.dir
+/root/pratyush/PersistentApps/trial_ds/CMakeFiles/edit_cache.dir
+/root/pratyush/PersistentApps/trial_ds/CMakeFiles/trial_ds_32.dir

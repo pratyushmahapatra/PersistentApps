@@ -1,0 +1,1 @@
+/usr/bin/cc -g3 -march=native   CMakeFiles/trial_ds.dir/trial_ds.c.o  -o trial_ds 

@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/root/pratyush/PersistentApps/trial_ds/trial_ds_64B.c
+stdio.h
+-
+stdlib.h
+-
+sys/types.h
+-
+sys/stat.h
+-
+sys/mman.h
+-
+fcntl.h
+-
+unistd.h
+-
+stdbool.h
+-
+x86intrin.h
+-
+stdint.h
+-
+
