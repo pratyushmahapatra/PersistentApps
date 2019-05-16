@@ -1,1 +1,0 @@
-/usr/bin/cc  -g -march=native   CMakeFiles/linkedlist_persistent_msync.dir/linkedlist_persistent_msync.c.o  -o linkedlist_persistent_msync -rdynamic 

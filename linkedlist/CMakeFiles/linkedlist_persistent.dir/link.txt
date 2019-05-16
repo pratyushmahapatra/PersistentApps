@@ -1,1 +1,0 @@
-/usr/bin/cc  -g -march=native   CMakeFiles/linkedlist_persistent.dir/linkedlist_persistent.c.o  -o linkedlist_persistent -rdynamic 

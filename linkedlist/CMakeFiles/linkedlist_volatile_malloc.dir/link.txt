@@ -1,1 +1,0 @@
-/usr/bin/cc  -g -march=native   CMakeFiles/linkedlist_volatile_malloc.dir/linkedlist_volatile_malloc.c.o  -o linkedlist_volatile_malloc -rdynamic 

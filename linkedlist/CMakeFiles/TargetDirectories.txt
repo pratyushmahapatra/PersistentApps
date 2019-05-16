@@ -1,7 +1,0 @@
-/nobackup/pratyush/persistent_apps/linkedlist/CMakeFiles/edit_cache.dir
-/nobackup/pratyush/persistent_apps/linkedlist/CMakeFiles/rebuild_cache.dir
-/nobackup/pratyush/persistent_apps/linkedlist/CMakeFiles/linkedlist_volatile_mallocall.dir
-/nobackup/pratyush/persistent_apps/linkedlist/CMakeFiles/linkedlist.dir
-/nobackup/pratyush/persistent_apps/linkedlist/CMakeFiles/linkedlist_persistent.dir
-/nobackup/pratyush/persistent_apps/linkedlist/CMakeFiles/linkedlist_volatile_malloc.dir
-/nobackup/pratyush/persistent_apps/linkedlist/CMakeFiles/linkedlist_volatile_mmap.dir
