@@ -1527,7 +1527,6 @@ int main(int argc, char ** argv) {
 	num_records = 0;
 	num_nodes = 0;
 
-    int ratio = atoi(argv[1]);
 	long addr1 = 0x0000010000000000;
 	long addr2 = 0x0000020000000000;
     size_btree = 0x0000001000000000;
@@ -1579,7 +1578,7 @@ int main(int argc, char ** argv) {
     	return EXIT_SUCCESS;
     }
     int initIterations = 200000000;
-	int ssIterations = (100000000)/(ratio + 1);
+	int ssIterations = (100000000);
     head = (list *) malloc(sizeof(list*));
     tail = (list *) malloc(sizeof(list*));
     head->next = tail;
@@ -1605,13 +1604,8 @@ int main(int argc, char ** argv) {
     program_start = rdtsc();
 	for (int i = 0; i < ssIterations; i++)
 	{
-        for (int j = 0; j < ratio; j++) {
-		    int insert_val = rand();
-		    append_val(insert_val);
-		    root = insert(root, insert_val, rand());
-        }    
-		int delete_val = select_val(); 	
-		root = delete(root, delete_val);
+	    int insert_val = rand();
+	    root = insert(root, insert_val, rand());
 	}
 
 

@@ -105,7 +105,6 @@ hrtime_t program_start, program_end;
 int flush_count, fence_count;
 long size_btree;
 
-
 typedef struct list{
       int data;
       struct list *next;
@@ -124,6 +123,7 @@ list *tail;
  * to change the type and content
  * of the value field.
  */
+
 typedef struct Value Value;
 struct Value{
     long long value; //8B
@@ -135,6 +135,7 @@ struct Value{
     long long padding6; //8B
     long long padding7; //8B
 }; //64B
+
 
 typedef struct record {
 	Value value;
@@ -271,6 +272,7 @@ node * delete(node * root, int key);
 hrtime_t flush_begin;
 hrtime_t flush_time;
 hrtime_t flush_time_s;
+
 
 void flush(long long addr , int size) {
 
@@ -645,8 +647,6 @@ node * make_node(void) {
 	new_node->num_keys = 0;
 	new_node->parent = NULL;
 	new_node->next = NULL;
-	flush(new_node, sizeof(node));
-	fence();
 	return new_node;
 }
 
@@ -656,6 +656,8 @@ node * make_node(void) {
 node * make_leaf(void) {
 	node * leaf = make_node();
 	leaf->is_leaf = true;
+	flush(leaf, sizeof(node));
+	fence();
 	return leaf;
 }
 
@@ -791,8 +793,6 @@ node * insert_into_node(node * root, node * n,
 	n->pointers[left_index + 1] = right;
 	n->keys[left_index] = key;
 	n->num_keys++;
-	flush(n, sizeof(node));
-	fence();
 	return root;
 }
 
@@ -869,10 +869,7 @@ node * insert_into_node_after_splitting(node * root, node * old_node, int left_i
 		child = new_node->pointers[i];
 		child->parent = new_node;
 	}
-	flush(new_node, sizeof(node));
-	flush(child, sizeof(node));
-	flush(old_node, sizeof(node));
-	fence();
+
 	/* Insert a new key into the parent of the two
 	 * nodes resulting from the split, with
 	 * the old node to the left and the new to the right.
@@ -937,8 +934,6 @@ node * insert_into_new_root(node * left, int key, node * right) {
 	root->parent = NULL;
 	left->parent = root;
 	right->parent = root;
-	flush(root, sizeof(node));
-	fence();
 	return root;
 }
 
@@ -989,6 +984,8 @@ node * insert(node * root, int key, int value) {
          */
 
         record_pointer->value.value = value;
+        flush(record_pointer, sizeof(record));
+        fence();
         return root;
     }
 
@@ -996,7 +993,6 @@ node * insert(node * root, int key, int value) {
 	 * value.
 	 */
 	record_pointer = make_record(value);
-
 
 	/* Case: the tree does not exist yet.
 	 * Start a new tree.
@@ -1089,12 +1085,12 @@ node * remove_entry_from_node(node * n, int key, node * pointer) {
 		for (i = n->num_keys; i < order - 1; i++) {
 			n->pointers[i] = NULL;
 		}
+		flush(n, sizeof(node));
+		fence();
 	}
 	else
 		for (i = n->num_keys + 1; i < order; i++)
 			n->pointers[i] = NULL;
-	flush(n, sizeof(node));
-	fence();
 
 	return n;
 }
@@ -1129,9 +1125,9 @@ node * adjust_root(node * root) {
 
 	else {
 		new_root = NULL;
+		flush(new_root, sizeof(node));
+		fence();
 	}
-	flush(new_root, sizeof(node));
-	fence();
 
 	return new_root;
 }
@@ -1217,9 +1213,9 @@ node * coalesce_nodes(node * root, node * n, node * neighbor, int neighbor_index
 			neighbor->num_keys++;
 		}
 		neighbor->pointers[order - 1] = n->pointers[order - 1];
+		flush(neighbor, sizeof(node));
+		fence();
 	}
-	flush(neighbor, sizeof(node));
-	fence();
 
 	root = delete_entry(root, n->parent, k_prime, n);
 
@@ -1300,9 +1296,11 @@ node * redistribute_nodes(node * root, node * n, node * neighbor, int neighbor_i
 
 	n->num_keys++;
 	neighbor->num_keys--;
-	flush(n, sizeof(node));
-	flush(neighbor, sizeof(node));
-	fence();
+	if (n->is_leaf) {
+		flush(n, sizeof(node));
+		flush(neighbor, sizeof(node));
+		fence();
+	}
 
 	return root;
 }
@@ -1396,8 +1394,6 @@ node * delete(node * root, int key) {
 	if (key_record != NULL && key_leaf != NULL) {
 		root = delete_entry(root, key_leaf, key, key_record);
 	}
-	flush(root, sizeof(node));
-	fence();
 	return root;
 }
 
@@ -1526,11 +1522,10 @@ int main(int argc, char ** argv) {
 	root = NULL;
 	num_records = 0;
 	num_nodes = 0;
-
-    int ratio = atoi(argv[1]);
 	long addr1 = 0x0000010000000000;
 	long addr2 = 0x0000020000000000;
     size_btree = 0x0000001000000000;
+
     int node_fd, record_fd, file_present;
     if  (access("/mnt/ext4-pmem22/persistent_apps/b+tree_new_nodes.txt", F_OK) != -1) {
         printf("File exists\n");
@@ -1578,18 +1573,20 @@ int main(int argc, char ** argv) {
     	print_tree(root);
     	return EXIT_SUCCESS;
     }
+
+
     int initIterations = 200000000;
-	int ssIterations = (100000000)/(ratio + 1);
+	int ssIterations = (100000000);
     head = (list *) malloc(sizeof(list*));
     tail = (list *) malloc(sizeof(list*));
     head->next = tail;
-    tail->prev = head;
+    tail->prev = head; 
 
     for (int i = 0; i < initIterations + ssIterations; i++) {
         list* node = node_p + i*sizeof(list);
         int temp1 = node->data;
         record* rec = record_p + i*sizeof(record);
-        long long temp2 = rec->value.value;
+        long long temp2 = rec->value.value; 
     }
 
 	for (int i = 0; i < initIterations; i++)
@@ -1605,15 +1602,9 @@ int main(int argc, char ** argv) {
     program_start = rdtsc();
 	for (int i = 0; i < ssIterations; i++)
 	{
-        for (int j = 0; j < ratio; j++) {
-		    int insert_val = rand();
-		    append_val(insert_val);
-		    root = insert(root, insert_val, rand());
-        }    
-		int delete_val = select_val(); 	
-		root = delete(root, delete_val);
+        int insert_val = rand();
+		root = insert(root, insert_val, rand());
 	}
-
 
 	program_end = rdtsc();
 	//print_tree(root);

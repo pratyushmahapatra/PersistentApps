@@ -50,6 +50,8 @@ hrtime_t flush_begin;
 hrtime_t flush_time;
 hrtime_t flush_time_s;
 hrtime_t rdtsc();
+long sizeentry;
+long sizehashmap;
 
 void *hashmapp;
 void* entryp;
@@ -100,7 +102,16 @@ struct Hashmap {
     Entry** buckets;
 }__attribute__((__aligned__(64)));
 
-void flush(long addr, int size) {
+void flush(long long addr, int size) {
+
+    if (((addr < hashmapp) || (addr > hashmapp + sizehashmap) )) {
+        if ((addr < entryp) || (addr > entryp + sizeentry) ) {
+            printf("Invalid flush address : %u . Hashmapp: %u Entryp: %u\n", addr, hashmapp, entryp);
+            exit(0);
+        }
+    }
+
+
 	if (flush_begin == 0)
     	flush_begin = rdtsc();
     hrtime_t flush_begin_s = rdtsc();
@@ -498,9 +509,10 @@ int main(int argc, char * argv[]) {
     fence_count = 0;
     del_count = 0;
     append_count = 0;
-    long addr = 0x0000010000000000;
-    long sizeentry = 200000000*sizeof(struct Entry);
-    int sizehashmap = sizeof(struct Hashmap) + 200000000*sizeof(Entry*) ;
+    long addr1 = 0x0000010000000000;
+    long addr2 = 0x0000020000000000;
+    sizeentry = 800000000*sizeof(struct Entry);
+    sizehashmap = sizeof(struct Hashmap) + 800000000*sizeof(Entry*) ;
     int ratio = atoi(argv[1]);
 
     int hashmap_fd, entry_fd, file_present;
@@ -527,14 +539,14 @@ int main(int argc, char * argv[]) {
         }
         file_present = 0;
     }
-    hashmapp = mmap( (void *) addr, sizehashmap, PROT_READ| PROT_WRITE, 
+    hashmapp = mmap( (void *) addr1, sizehashmap, PROT_READ| PROT_WRITE, 
                     MAP_SYNC|MAP_SHARED_VALIDATE, 
                     hashmap_fd,
                     0);
     if (hashmapp == (void *) -1 ) {
         perror("mmap");
     }
-    entryp = mmap( (void *) addr, sizeentry, PROT_READ| PROT_WRITE, 
+    entryp = mmap( (void *) addr2, sizeentry, PROT_READ| PROT_WRITE, 
                     MAP_SYNC|MAP_SHARED_VALIDATE, 
                     entry_fd,
                     0);
@@ -547,16 +559,26 @@ int main(int argc, char * argv[]) {
     	recover_hashmap(map);
     	print_hashmap(map);
     } else {
+		flush_count = 0;
+        fence_count = 0;
+        flush_time = 0;
+        flush_time_s = 0;
+        program_start = rdtsc();
     	struct Hashmap *map = hashmapCreate(4, hashmapIntHash, hashmapIntEquals);
         long long value;
         int key;
-        int initIterations = 100000;
+        int initIterations = 200000000;
         int ssIterations = (100000000)/(ratio + 1);
 	    head = (list *) malloc(sizeof(list*));
 	    tail = (list *) malloc(sizeof(list*));
 	    head->next = tail;
     	tail->prev = head; 
 	    
+        for (int i = 0; i <initIterations + ssIterations; i++) {
+            Entry *entry_p = entryp + sizeof(Entry)*i;
+            long long temp = entry_p->value.value1;
+        }
+
 	    for (int i = 0; i < initIterations; i++)
 		{
 			key = rand();
@@ -565,11 +587,6 @@ int main(int argc, char * argv[]) {
 			hashmapPut(map, key, value);
 		}
 
-		flush_count = 0;
-        fence_count = 0;
-        flush_time = 0;
-        flush_time_s = 0;
-        program_start = rdtsc();
 		for (int i = 0; i < ssIterations; i++)
 		{
     		for (int j = 0; j < ratio; j++) {

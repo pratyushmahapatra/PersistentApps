@@ -68,13 +68,13 @@ struct Value{
     //long long padding5; //8B
     //long long padding6; //8B
     //long long padding7; //8B
-}; 
+}__attribute__((__aligned__(64))); 
 
 void append (long long value) {
     struct Value *element = segmentp + sizeof(struct Value)*offset;
     offset++;
     element->value = value;
-    flush(&element, sizeof(struct Value));
+    flush(element, sizeof(struct Value));
     fence();
 }
 

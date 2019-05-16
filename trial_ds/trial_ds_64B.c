@@ -23,11 +23,13 @@ struct Node* INIT;
 struct Node* HEAD;
 struct Node* TAIL;
 int flush_count = 0;
+int flush_iter = 0;
 int fence_count = 0;
 hrtime_t flush_time = 0;
 hrtime_t flush_time_s = 0;
 hrtime_t flush_begin = 0;
 int offset = 0;
+int flush_frequency;
 
 hrtime_t rdtsc() {
     unsigned long int lo, hi;
@@ -36,15 +38,18 @@ hrtime_t rdtsc() {
 } 
 
 void flush(long long addr , int size) {
-    if (flush_begin == 0)
-        flush_begin = rdtsc();
-    hrtime_t flush_begin_s = rdtsc();
-    for (int i=0; i <size; i += 64) {
-    	_mm_clflushopt(addr + i);
-    	flush_count++;
-	}
-    hrtime_t flush_end = rdtsc(); 
-    flush_time_s += (flush_end - flush_begin_s);
+    if (flush_iter % flush_frequency == 0) {
+        if (flush_begin == 0)
+            flush_begin = rdtsc();
+        hrtime_t flush_begin_s = rdtsc();
+        for (int i=0; i <size; i += 64) {
+        	_mm_clflushopt(addr + i);
+        	flush_count++;
+	    }
+        hrtime_t flush_end = rdtsc(); 
+        flush_time_s += (flush_end - flush_begin_s);
+    }
+    flush_iter++;
 }
 
 void fence() {
@@ -68,13 +73,13 @@ struct Value{
     long long padding5; //8B
     long long padding6; //8B
     long long padding7; //8B
-}; 
+}__attribute__((__aligned__(64))); 
 
 void append (long long value) {
     struct Value *element = segmentp + sizeof(struct Value)*offset;
     offset++;
     element->value = value;
-    flush(&element, sizeof(struct Value));
+    flush(element, sizeof(struct Value));
     fence();
 }
 
@@ -85,6 +90,7 @@ int main(int argc, char *argv[]){
     fence_count = 0;
     long addr = 0x0000010000000000;
     long size = 0x0000001000000000;
+    flush_frequency = atoi(argv[1]);
 
     int segment_fd, file_present;
     if  (access("/mnt/ext4-pmem22/persistent_apps/trial.txt", F_OK) != -1) {
@@ -109,6 +115,12 @@ int main(int argc, char *argv[]){
     }
 
     int ssIterations = 500000000;
+    
+    for (int i = 0; i < ssIterations; i++) {
+        struct Value *element = segmentp + sizeof(struct Value)*i;
+        int temp = element->value;
+    }
+
 
     program_start = rdtsc();
     flush_begin = 0;

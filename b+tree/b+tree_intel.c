@@ -76,7 +76,7 @@
 #endif
 
 // Default order is 4.
-#define DEFAULT_ORDER 8
+#define DEFAULT_ORDER 19
 
 // Minimum order is necessarily 3.  We set the maximum
 // order arbitrarily.  You may change the maximum order.
@@ -99,10 +99,11 @@ int num_nodes;
 int num_records;
 typedef uint64_t hrtime_t;
 hrtime_t flush_time;
+hrtime_t flush_time_s;
 hrtime_t fence_time;
-hrtime_t start, end;
+hrtime_t program_start, program_end;
 int flush_count, fence_count;
-
+long size_btree;
 
 typedef struct list{
       int data;
@@ -122,8 +123,22 @@ list *tail;
  * to change the type and content
  * of the value field.
  */
+
+typedef struct Value Value;
+struct Value{
+    long long value; //8B
+    long long padding1; //8B
+    long long padding2; //8B
+    long long padding3; //8B
+    long long padding4; //8B
+    long long padding5; //8B
+    long long padding6; //8B
+    long long padding7; //8B
+}; //64B
+
+
 typedef struct record {
-	int value;
+	Value value;
 } record;
 
 /* Type representing a node in the B+ tree.
@@ -154,14 +169,15 @@ typedef struct record {
  * to data is always num_keys.  The
  * last leaf pointer points to the next leaf.
  */
-typedef struct node {
+typedef struct node node;
+struct node {
 	void * pointers[DEFAULT_ORDER];
 	int  keys[DEFAULT_ORDER - 1];
 	struct node * parent;
 	bool is_leaf;
 	int num_keys;
 	struct node * next; // Used for queue.
-} node;
+}__attribute__((__aligned__(64)));
 
 node* INIT;
 
@@ -205,7 +221,7 @@ bool verbose_output = false;
 // FUNCTION PROTOTYPES.
 
 // Output and utility.
-void flush(long addr, int size);
+void flush(long long addr, int size);
 void fence();
 void enqueue(node * new_node);
 node * dequeue(void);
@@ -253,15 +269,31 @@ node * redistribute_nodes(node * root, node * n, node * neighbor,
 node * delete_entry(node * root, node * n, int key, void * pointer);
 node * delete(node * root, int key);
 
+hrtime_t flush_begin;
+hrtime_t flush_time;
+hrtime_t flush_time_s;
 
-void flush(long addr , int size) {
-    hrtime_t flush_begin = rdtsc();
+
+void flush(long long addr , int size) {
+
+    if (((addr < node_p) || (addr > node_p + size_btree) )) {
+        if ((addr < record_p) || (addr > record_p + size_btree) ) {
+            printf("Invalid flush address : %p . Nodep: %p Recordp: %p\n", addr, node_p, record_p);
+            exit(0);
+        }
+    }
+
+	if (flush_begin == 0)
+    	flush_begin = rdtsc();
+    hrtime_t flush_begin_s = rdtsc();
+    
     for (int i=0; i <size; i += 64) {
     	_mm_clflushopt(addr + i);
     	flush_count++;
 	}
+
     hrtime_t flush_end = rdtsc(); 
-    flush_time += (flush_end - flush_begin);
+    flush_time_s += (flush_end - flush_begin_s);
 }
 
 void fence() {
@@ -269,7 +301,9 @@ void fence() {
     __asm__ __volatile__ ("mfence");
     fence_count++;
     hrtime_t fence_end = rdtsc(); 
-    fence_time += (fence_end - fence_begin);
+    flush_time += (fence_end - flush_begin);
+    flush_time_s += (fence_end - fence_begin);
+    flush_begin = 0;
 }
 
 
@@ -428,7 +462,7 @@ void find_and_print(node * const root, int key, bool verbose) {
 		printf("Record not found under key %d.\n", key);
 	else 
 		printf("Record at %p -- key %d, value %d.\n",
-				r, key, r->value);
+				r, key, r->value.value);
 }
 
 
@@ -451,7 +485,7 @@ void find_and_print_range(node * const root, int key_start, int key_end,
 					returned_keys[i],
 					returned_pointers[i],
 					((record *)
-					 returned_pointers[i])->value);
+					 returned_pointers[i])->value.value);
 	}
 }
 
@@ -579,7 +613,7 @@ record * make_record(int value) {
 		exit(EXIT_FAILURE);
 	}
 	else {
-		new_record->value = value;
+		new_record->value.value = value;
 	}
 	flush(new_record, sizeof(record));
 	fence();
@@ -915,7 +949,7 @@ node * start_new_tree(int key, record * pointer) {
 	node * root = make_leaf();
 	INIT->pointers[0] = root;
 	INIT->num_keys = 1;
-	flush(&INIT, sizeof(node));
+	flush(INIT, sizeof(node));
 	fence();
 	root->keys[0] = key;
 	root->pointers[0] = pointer;
@@ -949,7 +983,7 @@ node * insert(node * root, int key, int value) {
          * the value and return the tree.
          */
 
-        record_pointer->value = value;
+        record_pointer->value.value = value;
         flush(record_pointer, sizeof(record));
         fence();
         return root;
@@ -1488,9 +1522,11 @@ int main(int argc, char ** argv) {
 	root = NULL;
 	num_records = 0;
 	num_nodes = 0;
+	long addr1 = 0x0000010000000000;
+	long addr2 = 0x0000020000000000;
+    size_btree = 0x0000001000000000;
+    int ratio = atoi(argv[1]);
 
-	long addr = 0x0000010000000000;
-    long size = 0x0000000100000000;
     int node_fd, record_fd, file_present;
     if  (access("/mnt/ext4-pmem22/persistent_apps/b+tree_new_nodes.txt", F_OK) != -1) {
         printf("File exists\n");
@@ -1499,13 +1535,13 @@ int main(int argc, char ** argv) {
     }
     else {
         node_fd = open("/mnt/ext4-pmem22/persistent_apps/b+tree_new_nodes.txt", O_CREAT | O_RDWR, S_IRWXU);
-        ftruncate(node_fd, size);
+        ftruncate(node_fd, size_btree);
         if (node_fd == -1) {
             perror("open");
         }
         file_present = 0;
     }
-    node_p = mmap( (void *) addr, size, PROT_READ| PROT_WRITE, 
+    node_p = mmap( (void *) addr1, size_btree, PROT_READ| PROT_WRITE, 
                     MAP_SHARED, 
     	            node_fd,
     	            0);
@@ -1519,34 +1555,40 @@ int main(int argc, char ** argv) {
     }
     else {
         record_fd = open("/mnt/ext4-pmem22/persistent_apps/b+tree_new_records.txt", O_CREAT | O_RDWR, S_IRWXU);
-        ftruncate(record_fd, size);
+        ftruncate(record_fd, size_btree);
         if (record_fd == -1) {
             perror("open");
         }
         file_present = 0;
     }
-    record_p = mmap( (void *) addr, size, PROT_READ| PROT_WRITE, 
+    record_p = mmap( (void *) addr2, size_btree, PROT_READ| PROT_WRITE, 
                     MAP_SYNC|MAP_SHARED_VALIDATE, 
     	            record_fd,
     	            0);
     if (record_p == (void *) -1 ) {
         perror("mmap");
     }
-    printf("Size of node %d\n", sizeof(node));
-    exit(0);
-    start = rdtsc();
 
     if (file_present) {
     	root = reconstruct_tree(root);
     	print_tree(root);
     	return EXIT_SUCCESS;
     }
-    int initIterations = 10000;
-    int ssIterations = 10000;
+
+
+    int initIterations = 200000000;
+	int ssIterations = (100000000)/(ratio + 1);
     head = (list *) malloc(sizeof(list*));
     tail = (list *) malloc(sizeof(list*));
     head->next = tail;
     tail->prev = head; 
+
+    for (int i = 0; i < initIterations + ssIterations; i++) {
+        list* node = node_p + i*sizeof(list);
+        int temp1 = node->data;
+        record* rec = record_p + i*sizeof(record);
+        long long temp2 = rec->value.value; 
+    }
 
 	for (int i = 0; i < initIterations; i++)
 	{
@@ -1554,23 +1596,30 @@ int main(int argc, char ** argv) {
 		append_val(insert_val);
 		root = insert(root, insert_val, rand());	
 	}
+	flush_count = 0;
+	fence_count = 0;
+    flush_time = 0;
+    flush_time_s = 0;
+    program_start = rdtsc();
 	for (int i = 0; i < ssIterations; i++)
 	{
-		int insert_val = rand();
-		append_val(insert_val);
-		root = insert(root, insert_val, rand());	
+        for (int j = 0; j < ratio; j++) {
+		    int insert_val = rand();
+		    append_val(insert_val);
+		    root = insert(root, insert_val, rand());
+        }    
 		int delete_val = select_val(); 	
 		root = delete(root, delete_val);
 	}
 
 
-	end = rdtsc();
-	print_tree(root);
-	printf("Program time: %f , Fence time: %f Flush time: %f\n", ((double)(end - start)/(3.4*1000*1000)), ((double)fence_time)/(3.4*1000*1000), ((double)flush_time)/(3.4*1000*1000));
+	program_end = rdtsc();
+	//print_tree(root);
+    printf("Program time: %f msec Flush time: %f msec Non overlapping Flush time : %f msec \n", ((double)(program_end - program_start)/(3.4*1000*1000)), ((double)flush_time)/(3.4*1000*1000), ((double)flush_time_s)/(3.4*1000*1000));
     printf("Number of flushes: %ld, Number of fences: %ld\n", flush_count, fence_count);
-    munmap(node_p, size);
+    munmap(node_p, size_btree);
     close(node_fd);
-    munmap(record_p, size);
+    munmap(record_p, size_btree);
     close(record_fd);
 	return EXIT_SUCCESS;
 }
